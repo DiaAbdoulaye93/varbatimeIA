@@ -5,6 +5,7 @@ API from these models and re-validates every tool input against them.
 """
 
 from dataclasses import dataclass
+from datetime import datetime
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -149,6 +150,93 @@ class PipelineResult(BaseModel):
     synthesis_md: str
     usage: list[UsageRecord]
     duration_ms: int
+
+
+# --- API I/O (app/api/analyses.py), mirrored by frontend/src/app/core/models.ts ---
+
+AnalysisStatus = Literal["pending", "processing", "done", "failed"]
+
+
+class HealthOut(BaseModel):
+    status: Literal["ok"] = "ok"
+    version: str
+
+
+class AnalysisCreated(BaseModel):
+    id: str
+    status: AnalysisStatus
+    cached: bool  # true when an identical analysis was reused instead of re-running
+
+
+class AnalysisSummary(BaseModel):
+    id: str
+    name: str
+    status: AnalysisStatus
+    progress: int
+    created_at: datetime
+    total_verbatims: int
+
+
+class AnalysisDetail(AnalysisSummary):
+    context: str
+    current_step: str
+    error: str | None
+    stats: AnalysisStats | None
+    synthesis_md: str | None
+    duration_ms: int | None
+    finished_at: datetime | None
+
+
+class RepresentativeVerbatim(BaseModel):
+    idx: int
+    text: str
+
+
+class ThemeOut(BaseModel):
+    id: int
+    rank: int
+    label: str
+    description: str
+    count: int
+    pct: int  # share of analysed verbatims, rounded
+    sentiment_breakdown: SentimentCounts
+    raw_labels: list[str]
+    representatives: list[RepresentativeVerbatim]
+
+
+class VerbatimOut(BaseModel):
+    idx: int
+    text: str
+    sentiment: Sentiment | None
+    themes_raw: list[str]
+    key_phrase: str | None
+    skipped_reason: str | None
+    theme_ids: list[int]
+
+
+class VerbatimPage(BaseModel):
+    items: list[VerbatimOut]
+    total: int
+    page: int
+    size: int
+
+
+class StepUsage(BaseModel):
+    step: str
+    calls: int
+    models: list[str]
+    input_tokens: int
+    cache_creation_tokens: int
+    cache_read_tokens: int
+    output_tokens: int
+    duration_ms: int
+    cost_usd: float | None
+
+
+class UsageOut(BaseModel):
+    steps: list[StepUsage]
+    total: StepUsage
+    analysis_duration_ms: int | None
 
 
 # --- Dataset generation (scripts/generate_dataset.py) ---
