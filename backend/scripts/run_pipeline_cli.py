@@ -122,11 +122,23 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--context", default=DEFAULT_CONTEXT)
     parser.add_argument("--out", type=Path, default=DEFAULT_OUT)
     parser.add_argument("--gold", type=Path, help="reference labels (.gold.csv) to compare with")
+    parser.add_argument(
+        "--result",
+        type=Path,
+        help="evaluate an existing result.json instead of running the pipeline (no API call)",
+    )
     args = parser.parse_args(argv)
 
     settings = get_settings()
     logging.basicConfig(level=settings.log_level, format="%(levelname)s %(name)s: %(message)s")
     logging.getLogger("httpx2").setLevel(logging.WARNING)
+
+    if args.result:
+        result = PipelineResult.model_validate_json(args.result.read_text(encoding="utf-8"))
+        log_recap(result)
+        if args.gold:
+            evaluate_against_gold(result, args.gold)
+        return 0
 
     try:
         texts = load_verbatims(args.csv.read_bytes())

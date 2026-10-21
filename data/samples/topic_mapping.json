@@ -1,0 +1,26 @@
+{
+  "reseau": ["Couverture et qualité réseau", "Couverture réseau"],
+  "service_client": ["Service client"],
+  "tarif_mobile_money": [
+    "Tarification mobile money",
+    "Services mobile money",
+    "Service mobile money"
+  ],
+  "tarif_forfait": [
+    "Forfaits et pass internet",
+    "Offres internet et forfaits",
+    "Crédit téléphonique",
+    "Activation et crédit"
+  ],
+  "application": ["Application mobile"],
+  "agence": ["Accueil en agence"],
+  "delai": [
+    "Forfaits et pass internet",
+    "Activation et crédit",
+    "Crédit téléphonique",
+    "Services mobile money",
+    "Service mobile money",
+    "Service client"
+  ],
+  "general": ["Appréciation générale"]
+}
