@@ -76,8 +76,9 @@ def main() -> int:
     file_path = payload.get("tool_input", {}).get("file_path")
     if not file_path:
         return 0
-    path = Path(file_path)
-    if not path.exists():
+    path = Path(file_path).resolve()
+    # Only format files that belong to this repo (skip scratch files elsewhere).
+    if not path.exists() or not path.is_relative_to(PROJECT_DIR):
         return 0
     if path.suffix == ".py":
         return format_python(path)
