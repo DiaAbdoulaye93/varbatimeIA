@@ -17,8 +17,8 @@ Format CSV : UTF-8, séparateur virgule, texte entre guillemets doubles, `id` en
 1. **Génération par Claude** — 4 appels de 45 verbatims chacun (180 verbatims « propres »).
    - System prompt : `backend/app/pipeline/prompts/dataset_system.md` (avec `cache_control`, il est identique sur les 4 appels).
    - Message utilisateur : `Lot {n} sur 4. Produis 45 verbatims.` Varier le numéro de lot suffit à obtenir des contenus différents ; ajouter sur les lots 2 à 4 la ligne `Ne réutilise aucune formulation d'un lot précédent.` est inutile puisque le modèle ne les voit pas, donc ne pas l'écrire.
-   - Modèle : `claude-sonnet-5-5`, `temperature: 1.0` (diversité), `max_tokens: 6000`.
-   - Tool forcé `record_verbatims` :
+   - Modèle : `claude-sonnet-5-5`, pas de `temperature` (rejetée par Sonnet 5.5 ; la valeur par défaut 1 donne déjà la diversité), `effort: medium`, `max_tokens: 16000` (la réflexion adaptative compte dedans).
+   - Tool `record_verbatims` en `strict: true` avec `tool_choice: auto` (Sonnet 5.5 rejette le forçage) ; le script vérifie qu'un appel est revenu et relance une fois sinon :
      ```json
      {
        "name": "record_verbatims",

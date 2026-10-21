@@ -61,7 +61,7 @@ Fait en Python, avant tout appel :
 - Entrée compacte : une ligne par verbatim, `"{idx}: {texte}"`. Pas de JSON d'entrée (coûteux en tokens).
 - **System prompt stable** (rôle, définitions des sentiments, règles de thèmes, 4-5 exemples few-shot) marqué `cache_control: {"type": "ephemeral"}`. Il est identique pour tous les lots → lu depuis le cache à partir du 2e appel. Le system prompt doit dépasser le seuil minimal de cache du modèle (viser > 2 000 tokens, les few-shot y aident).
 - Le `context` de l'analyse va dans le **user message** (il change d'une analyse à l'autre), pas dans le system prompt.
-- **Sortie forcée par tool use** (`tool_choice: {"type": "tool", "name": "record_extraction"}`) avec schéma strict :
+- **Sortie forcée par tool use** (`tool_choice: {"type": "tool", "name": "record_extraction"}`, accepté par Haiku 5.5) avec schéma strict :
   ```json
   {
     "results": [
@@ -75,7 +75,7 @@ Fait en Python, avant tout appel :
   }
   ```
   Le modèle **ne renvoie jamais le texte du verbatim** (on l'a déjà). Pas de champ « explication ». Pas de score de confiance en V1.
-- `max_tokens` borné (~1 500 pour 25 verbatims), `temperature: 0`.
+- `max_tokens` borné (~1 500 pour 25 verbatims), `effort: low`. **Pas de `temperature`** : Haiku 5.5 et Sonnet 5.5 rejettent toute valeur non par défaut (400). La stabilité vient du schéma strict et du prompt.
 - Modèle : **`claude-haiku-5-5`** (volume, coût). Fallback configurable par variable d'env `EXTRACT_MODEL`.
 - Validation post-appel : chaque `idx` du lot doit être présent ; les manquants sont relancés une fois dans un mini-lot, sinon `skipped_reason = "extraction_failed"`.
 - Retry avec backoff exponentiel sur 429/529/5xx (3 tentatives). Le SDK Anthropic le fait nativement avec `max_retries`.
@@ -97,7 +97,7 @@ Fait en Python, avant tout appel :
   ```
 - Contrainte dans le prompt : **6 à 10 thèmes canoniques**, chaque libellé brut doit être affecté à exactement un thème, un thème « Autres » est autorisé mais doit rester < 10 % des occurrences.
 - Vérification locale : tout libellé brut non mappé est rattaché à « Autres » (pas de second appel).
-- Modèle : **`claude-sonnet-5-5`** (qualité du regroupement, un seul appel donc coût marginal).
+- Modèle : **`claude-sonnet-5-5`** (qualité du regroupement, un seul appel donc coût marginal). Sonnet 5.5 rejette le `tool_choice` forcé : `tool_choice: auto` + `strict: true` + consigne du prompt, puis vérification locale qu'un appel `record_theme_mapping` est bien revenu (un seul nouvel essai sinon). `effort: low`, `max_tokens` ~4 000 (la réflexion adaptative compte dans `max_tokens`).
 - Après cette étape, on calcule **localement** : effectif par thème, répartition des sentiments par thème, verbatims représentatifs par thème (les 3 verbatims les plus courts contenant la `key_phrase` ou, à défaut, les 3 premiers).
 
 ### 2.4 Étape 3 — Synthèse exécutive (`synthesize.py`)
@@ -108,7 +108,7 @@ Fait en Python, avant tout appel :
   - Points forts (2-3 puces, avec thème + chiffre)
   - Points d'attention (3-4 puces, priorisées)
   - Recommandations (3 puces actionnables)
-- `max_tokens` ~1 200, modèle **`claude-sonnet-5-5`**.
+- `max_tokens` ~3 000 (réflexion adaptative incluse), `effort: low`, pas de `temperature`, modèle **`claude-sonnet-5-5`**.
 
 ### 2.5 Comptabilité des tokens
 
@@ -351,7 +351,7 @@ S'il reste du temps en session 4, dans cet ordre : export CSV enrichi, ArgoCD Ap
 | Async | `BackgroundTasks` + polling | Zéro infra en plus, suffisant pour 1 utilisateur démo |
 | Base | PostgreSQL 16 (local d'abord, hébergement prod à décider avant la session 4) ; tests sur Postgres, service `postgres:16` en CI | Instance déjà installée chez le candidat ; tests sur le même moteur que l'exécution |
 | Modèles | Haiku 5.5 extraction, Sonnet 5.5 regroupement + synthèse | Coût/qualité ; configurable par env |
-| Sortie LLM | Tool use forcé (extraction, regroupement), Markdown (synthèse) | JSON fiable sans parsing fragile |
+| Sortie LLM | Tool use avec schéma strict : forcé sur Haiku (extraction), `auto` + `strict` + vérification sur Sonnet 5.5 (regroupement, génération), qui rejette le forçage ; Markdown (synthèse). Pas de `temperature` (rejetée par les modèles 5.5), `effort` réglé par étape | JSON fiable sans parsing fragile, compatible avec l'API des modèles 5.5 |
 | Déploiement | Un conteneur, image sur GHCR, `kubectl set image` depuis GitHub Actions | Démontrable, compréhensible, une seule surface de panne |
 | Langue | Doc et UI en français, code et commentaires en anglais | Convention du repo |
 

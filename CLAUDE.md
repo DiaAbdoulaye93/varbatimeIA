@@ -29,7 +29,7 @@ Démonstrateur d'analyse de verbatims d'enquêtes (sentiment, thèmes, synthèse
 - Base : PostgreSQL 16 local (`localhost:5432`), URL lue depuis `DATABASE_URL` (`postgresql+psycopg://...`), jamais hardcodée. Tests sur la base `sat_verbatim_test`, recréée par les fixtures.
 - Tests : `pytest`, **jamais d'appel réseau réel** en test. Le client LLM est injecté et mocké (`FakeLlmClient` renvoyant des fixtures JSON).
 - Appels Claude : uniquement via `app/pipeline/llm_client.py`. Pas d'import direct de `anthropic` ailleurs. Chaque appel enregistre son usage (tokens, modèle, durée, étape).
-- Sorties structurées : tool use forcé (`tool_choice`), schémas définis une seule fois dans `schemas.py` et réutilisés pour le `input_schema` du tool.
+- Sorties structurées : tool use avec `strict: true` ; `tool_choice` forcé sur Haiku 5.5, `auto` + vérification de l'appel sur Sonnet 5.5 (qui rejette le forçage). Schémas définis une seule fois en Pydantic dans `schemas.py`, convertis en `input_schema` et revalidés côté client. Jamais de `temperature` (rejetée par les modèles 5.5) ; `effort` par étape dans `config.py`.
 - Prompts : fichiers `.md` dans `app/pipeline/prompts/`, chargés au démarrage, jamais de prompt en f-string inline. Le system prompt d'extraction porte `cache_control`.
 - Noms de modèles : lus depuis `config.py` / variables d'env (`EXTRACT_MODEL`, `CLUSTER_MODEL`, `SYNTH_MODEL`). Ne pas hardcoder.
 - Grille de prix dans `config.py` : vérifier les tarifs sur la doc Anthropic au moment de l'écrire, ne pas inventer.

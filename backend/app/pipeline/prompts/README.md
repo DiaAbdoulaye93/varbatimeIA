@@ -8,7 +8,7 @@ Toute modification d'un prompt doit incrémenter `PROMPT_VERSION` dans `config.p
 
 ## 1. `extract_system.md` — extraction par lot
 
-**Modèle** : `EXTRACT_MODEL` (défaut `claude-haiku-5-5`). **Température** : 0. **max_tokens** : 1 500.
+**Modèle** : `EXTRACT_MODEL` (défaut `claude-haiku-5-5`). **Effort** : `low`. **Pas de `temperature`** (rejetée par les modèles 5.5). **max_tokens** : 1 500.
 
 **System prompt** : contenu du fichier, dans un bloc avec `cache_control: {"type": "ephemeral"}`. Il est identique pour tous les lots et toutes les analyses ; c'est lui qui est mis en cache. Vérifier au premier appel que `cache_creation_input_tokens > 0`, puis `cache_read_input_tokens > 0` sur les suivants ; si le cache ne s'active pas, le prompt est sous le seuil minimal du modèle et il faut l'allonger (ajouter des exemples), pas le raccourcir.
 
@@ -23,7 +23,7 @@ Verbatims :
 ```
 Un verbatim par ligne, 25 par lot. `idx` est l'index d'origine dans le CSV. Pas de JSON en entrée.
 
-**Tool** (déclaré dans `tools`, imposé par `tool_choice: {"type": "tool", "name": "record_extraction"}`) :
+**Tool** (déclaré dans `tools` avec `strict: true`, imposé par `tool_choice: {"type": "tool", "name": "record_extraction"}`, accepté par Haiku 5.5). Le schéma ci-dessous est indicatif : la source unique est `schemas.py` ; les contraintes non supportées en mode strict (`minItems` > 1, `maxItems`) sont retirées du schéma envoyé et revalidées par Pydantic :
 ```json
 {
   "name": "record_extraction",
@@ -64,7 +64,7 @@ Un verbatim par ligne, 25 par lot. `idx` est l'index d'origine dans le CSV. Pas 
 
 ## 2. `cluster_system.md` — regroupement des thèmes
 
-**Modèle** : `CLUSTER_MODEL` (défaut `claude-sonnet-5-5`). **Température** : 0. **max_tokens** : 2 000. **Un seul appel par analyse.**
+**Modèle** : `CLUSTER_MODEL` (défaut `claude-sonnet-5-5`). **Effort** : `low`. **Pas de `temperature`**. **max_tokens** : 4 000 (la réflexion adaptative compte dedans). **Un seul appel par analyse.**
 
 **Message utilisateur** (gabarit) :
 ```
@@ -77,7 +77,7 @@ Total : {total_occurrences} occurrences, {n_distinct} libellés distincts.
 ```
 Libellés bruts **uniques**, triés par `count` décroissant. Jamais les verbatims.
 
-**Tool** (`tool_choice` forcé sur `record_theme_mapping`) :
+**Tool** (`strict: true`, `tool_choice: auto` : Sonnet 5.5 rejette le forçage. On vérifie qu'un bloc `tool_use` `record_theme_mapping` est revenu, sinon un seul nouvel essai) :
 ```json
 {
   "name": "record_theme_mapping",
@@ -115,7 +115,7 @@ Libellés bruts **uniques**, triés par `count` décroissant. Jamais les verbati
 
 ## 3. `synthesize_system.md` — synthèse exécutive
 
-**Modèle** : `SYNTH_MODEL` (défaut `claude-sonnet-5-5`). **Température** : 0.2 (un peu de fluidité rédactionnelle, pas de créativité). **max_tokens** : 1 200. **Pas de tool** : la réponse est le Markdown lui-même, stocké tel quel dans `Analysis.synthesis_md`. **Un seul appel par analyse.**
+**Modèle** : `SYNTH_MODEL` (défaut `claude-sonnet-5-5`). **Effort** : `low`. **Pas de `temperature`**. **max_tokens** : 3 000 (réflexion incluse). Lire la réponse par type de bloc (`text`), la réponse peut commencer par un bloc `thinking`. **Pas de tool** : la réponse est le Markdown lui-même, stocké tel quel dans `Analysis.synthesis_md`. **Un seul appel par analyse.**
 
 **Message utilisateur** (gabarit) :
 ```
