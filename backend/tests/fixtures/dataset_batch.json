@@ -1,0 +1,17 @@
+{
+  "verbatims": [
+    {"text": "Le réseau coupe tout le temps à Pikine le soir", "expected_sentiment": "negative", "expected_topics": ["reseau"]},
+    {"text": "dafa baax, carte SIM eue en 10 min à Liberté 6", "expected_sentiment": "positive", "expected_topics": ["agence", "delai"]},
+    {"text": "vos frais de retrait là c trop même", "expected_sentiment": "negative", "expected_topics": ["tarif_mobile_money"]},
+    {"text": "Il faudrait une agence à Mbour", "expected_sentiment": "neutral", "expected_topics": ["agence"]},
+    {"text": "l'appli plante quand je paie la facture d'eau", "expected_sentiment": "negative", "expected_topics": ["application"]},
+    {"text": "bien", "expected_sentiment": "positive", "expected_topics": ["general"]},
+    {"text": "Le pass internet est bon mais il expire trop vite", "expected_sentiment": "mixed", "expected_topics": ["tarif_forfait"]},
+    {"text": "1234 injoignable depuis 3 jours, bravo", "expected_sentiment": "negative", "expected_topics": ["service_client"]},
+    {"text": "jërëjëf pour le remboursement rapide", "expected_sentiment": "positive", "expected_topics": ["delai"]},
+    {"text": "j'utilise le mobile money pour envoyer à ma mère à Thiès", "expected_sentiment": "neutral", "expected_topics": ["tarif_mobile_money"]},
+    {"text": "Agent très gentil au téléphone, problème réglé", "expected_sentiment": "positive", "expected_topics": ["service_client"]},
+    {"text": "LE RESEAU A TOUBA C NUL", "expected_sentiment": "negative", "expected_topics": ["reseau"]},
+    {"text": "le réseau coupe tout le temps à pikine le soir", "expected_sentiment": "negative", "expected_topics": ["reseau"]}
+  ]
+}
