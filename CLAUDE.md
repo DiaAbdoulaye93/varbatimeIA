@@ -26,6 +26,7 @@ Démonstrateur d'analyse de verbatims d'enquêtes (sentiment, thèmes, synthèse
 - Gestion des dépendances : `uv` (`uv sync`, `uv run pytest`). Fallback `pip` si `uv` indisponible.
 - Lint/format : `ruff` (config dans `pyproject.toml`). Lancer `uv run ruff check --fix . && uv run ruff format .` avant chaque commit.
 - Typage strict : annotations partout, `pydantic` v2 pour les I/O, `SQLModel` pour les tables.
+- Base : PostgreSQL 16 local (`localhost:5432`), URL lue depuis `DATABASE_URL` (`postgresql+psycopg://...`), jamais hardcodée. Tests sur la base `sat_verbatim_test`, recréée par les fixtures.
 - Tests : `pytest`, **jamais d'appel réseau réel** en test. Le client LLM est injecté et mocké (`FakeLlmClient` renvoyant des fixtures JSON).
 - Appels Claude : uniquement via `app/pipeline/llm_client.py`. Pas d'import direct de `anthropic` ailleurs. Chaque appel enregistre son usage (tokens, modèle, durée, étape).
 - Sorties structurées : tool use forcé (`tool_choice`), schémas définis une seule fois dans `schemas.py` et réutilisés pour le `input_schema` du tool.
@@ -45,12 +46,12 @@ Démonstrateur d'analyse de verbatims d'enquêtes (sentiment, thèmes, synthèse
 
 ## Docker / K8s / CI
 - Un seul `Dockerfile` multi-stage à la racine. L'image finale est `python:3.12-slim` + `dist/` Angular copié dans `backend/static/`.
-- Manifests dans `deploy/k8s/`, namespace `sat`. Secret `anthropic-api-key` créé à la main, jamais commité (`secret.example.yaml` seulement).
+- Manifests dans `deploy/k8s/`, namespace `sat`. Hébergement de Postgres en prod : à décider avant la session 4, ne rien supposer d'ici là. Secret `anthropic-api-key` créé à la main, jamais commité (`secret.example.yaml` seulement).
 - Workflows : `.github/workflows/ci.yml` (tests) et `deploy.yml` (push `main` → GHCR → `kubectl set image`). Expliquer chaque step en commentaire YAML : l'auteur veut comprendre la CI.
 
 ## Interdits
 - Démarrer une fonctionnalité `[V2]`.
-- Ajouter Redis, Celery, Postgres, NgRx, Tailwind, un second conteneur.
+- Ajouter Redis, Celery, NgRx, Tailwind, un second conteneur applicatif.
 - Appeler l'API Claude dans les tests ou sans passer par `llm_client.py`.
 - Renvoyer le texte des verbatims dans les sorties LLM (gaspillage de tokens).
 - Commiter `.env`, un kubeconfig, une clé API, ou le dossier `out/`.

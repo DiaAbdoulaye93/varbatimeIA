@@ -26,7 +26,7 @@
 ┌──────────────┐   POST /api/analyses (CSV + context)   ┌────────────────────────┐
 │  Angular SPA │ ─────────────────────────────────────▶ │  FastAPI               │
 │  (dashboard) │ ◀───────── poll GET /api/analyses/{id} │  BackgroundTasks       │
-└──────────────┘                                        │  SQLite (SQLModel)     │
+└──────────────┘                                        │  PostgreSQL (SQLModel) │
                                                         │                        │
                                                         │  pipeline/             │
                                                         │   1. preprocess (local)│
@@ -37,8 +37,8 @@
 ```
 
 - **Un seul conteneur** : image multi-stage (build Angular → copie du `dist/` dans `backend/static/`, FastAPI sert la SPA avec fallback `index.html`). Un Deployment, un Service, un Ingress. Pas de second service à déployer la veille de la deadline.
-- **Asynchrone sans infra supplémentaire** : `BackgroundTasks` de FastAPI + statut/progression persistés en SQLite. Pas de Redis, pas de Celery `[V2]`.
-- **SQLite** fichier sur un PVC (ou `emptyDir` si la persistance n'est pas critique pour la démo). Postgres `[V2]`.
+- **Asynchrone sans infra supplémentaire** : `BackgroundTasks` de FastAPI + statut/progression persistés en PostgreSQL. Pas de Redis, pas de Celery `[V2]`.
+- **PostgreSQL 16** : en local, l'instance déjà installée sur `localhost:5432` (bases `sat_verbatim` et `sat_verbatim_test`). Connexion via `DATABASE_URL` (driver `psycopg` v3). L'hébergement de Postgres en production est **à décider avant la session 4** (on construit et on teste tout en local d'abord).
 
 ---
 
@@ -270,7 +270,7 @@ Deux workflows séparés pour que la CI reste rapide et que le déploiement ne s
 
 ### `ci.yml` — à chaque push et PR
 1. `actions/checkout`
-2. Backend : `uv sync` (ou `pip install -e .[dev]`), `ruff check`, `pytest` (LLM mocké, aucune clé API nécessaire).
+2. Backend : service `postgres:16` démarré par le job, `uv sync` (ou `pip install -e .[dev]`), `ruff check`, `pytest` sur cette base (LLM mocké, aucune clé API nécessaire).
 3. Frontend : `npm ci`, `ng build --configuration production`, `ng test --watch=false` (si des specs existent).
 4. Échoue → la PR est rouge. Rien n'est déployé.
 
@@ -319,7 +319,7 @@ Deux workflows séparés pour que la CI reste rapide et que le déploiement ne s
 
 ### Session 4 (2-3h) — Dockerisation, K3s, CI/CD, README
 - [ ] `Dockerfile` multi-stage, FastAPI sert `static/` avec fallback SPA.
-- [ ] Manifests `deploy/k8s/` (Deployment 1 réplica, resources requests/limits, readiness sur `/health`, Secret clé API, PVC SQLite, Ingress nginx avec host).
+- [ ] Manifests `deploy/k8s/` (Deployment 1 réplica, resources requests/limits, readiness sur `/health`, Secret clé API, base PostgreSQL selon la décision prise avant la session 4, Ingress nginx avec host).
 - [ ] `ci.yml` + `deploy.yml` (§6). Premier déploiement, vérification de bout en bout sur l'URL publique.
 - [ ] README (§8), capture d'écran du dashboard, GIF ou vidéo courte de la démo.
 - [ ] Tag `v1.0.0`.
@@ -339,7 +339,7 @@ S'il reste du temps en session 4, dans cet ordre : export CSV enrichi, ArgoCD Ap
 5. **Résultat** : sur 200 verbatims — nb d'appels, tokens, coût estimé, durée, exemple de thèmes et extrait de synthèse. Chiffres **mesurés**, pas estimés.
 6. **Lancer en local** : `docker compose up`, variables d'env, format du CSV
 7. **Déploiement** : K3s + GitHub Actions, en 10 lignes
-8. **Limites & V2** : honnête et court (Batches API, Postgres, multi-langue, évaluation de la qualité du codage vs codeur humain)
+8. **Limites & V2** : honnête et court (Batches API, multi-langue, évaluation de la qualité du codage vs codeur humain)
 
 ---
 
@@ -349,7 +349,7 @@ S'il reste du temps en session 4, dans cet ordre : export CSV enrichi, ArgoCD Ap
 |---|---|---|
 | Dashboard | Angular, standalone components | Stack du candidat, attendu par la SAT |
 | Async | `BackgroundTasks` + polling | Zéro infra en plus, suffisant pour 1 utilisateur démo |
-| Base | SQLite sur PVC | Simplicité ; Postgres en V2 |
+| Base | PostgreSQL 16 (local d'abord, hébergement prod à décider avant la session 4) ; tests sur Postgres, service `postgres:16` en CI | Instance déjà installée chez le candidat ; tests sur le même moteur que l'exécution |
 | Modèles | Haiku 5.5 extraction, Sonnet 5.5 regroupement + synthèse | Coût/qualité ; configurable par env |
 | Sortie LLM | Tool use forcé (extraction, regroupement), Markdown (synthèse) | JSON fiable sans parsing fragile |
 | Déploiement | Un conteneur, image sur GHCR, `kubectl set image` depuis GitHub Actions | Démontrable, compréhensible, une seule surface de panne |
@@ -369,7 +369,7 @@ Ces outils vivent **dans le repo**, versionnés, pour que chaque session Claude 
 | **Context7** (`upstash/context7`) | Documentation à jour de FastAPI, SQLModel, Angular, ng2-charts, SDK Anthropic. Évite que Claude Code code contre une version périmée d'Angular ou du SDK | Haute — dès session 1 |
 | **Kubernetes** (ex. `containers/kubernetes-mcp-server` ou équivalent) | `kubectl get/describe/logs` depuis Claude Code pour déboguer le déploiement K3s | Moyenne — session 4 uniquement ; `kubectl` dans le shell suffit si l'installation prend plus de 10 min |
 
-À **ne pas** ajouter : un serveur MCP Anthropic/Claude API (inutile, le SDK Python suffit), un serveur base de données (SQLite se lit avec `sqlite3` en shell).
+À **ne pas** ajouter : un serveur MCP Anthropic/Claude API (inutile, le SDK Python suffit), un serveur base de données (Postgres se lit avec `psql` en shell).
 
 Le fichier `.mcp.json` est commité **sans token** : les tokens (GitHub PAT `repo` + `workflow` + `read:packages`) passent par variables d'environnement référencées dans la config, jamais en clair.
 
@@ -383,7 +383,7 @@ Le fichier `.mcp.json` est commité **sans token** : les tokens (GitHub PAT `rep
 
 - `/session-start` : lit `CLAUDE.md` et `IMPLEMENTATION.md` §7, identifie la première case non cochée, propose un plan en 10 lignes et **attend validation**.
 - `/session-end` : coche les cases terminées dans §7, ajoute une ligne au `## Journal` de `CLAUDE.md`, lance `pytest` et `npm run build`, propose le message de commit.
-- `/cost-report` : lit la table `llm_calls` de la dernière analyse (via `sqlite3`) et affiche appels/tokens/coût par étape, prêt à coller dans le README §5.
+- `/cost-report` : lit la table `llm_calls` de la dernière analyse (via `psql`) et affiche appels/tokens/coût par étape, prêt à coller dans le README §5.
 
 ### 10.4 Sous-agents (`.claude/agents/`) — optionnel
 
