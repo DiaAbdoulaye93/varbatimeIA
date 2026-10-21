@@ -1,0 +1,234 @@
+<main class="page detail">
+  @if (loadError() === 'missing') {
+    <section class="card padded stack gap-3">
+      <h1 class="section-title">Analyse introuvable</h1>
+      <p class="muted">Cette analyse n'existe pas ou a été supprimée.</p>
+      <a class="btn btn-stroked self-start" routerLink="/"><app-icon name="arrowLeft" />Retour à la liste</a>
+    </section>
+  } @else if (loadError() === 'error') {
+    <section class="card padded" role="alert">
+      Impossible de joindre le serveur. Vérifiez que l'API est démarrée, puis rechargez la page.
+    </section>
+  } @else if (!analysis()) {
+    <section class="card padded muted">Chargement de l'analyse…</section>
+  } @else {
+    @let a = analysis()!;
+    <div class="stack gap-5 no-print">
+      <nav class="breadcrumb" aria-label="Fil d'Ariane">
+        <a routerLink="/">Analyses</a><span aria-hidden="true">/</span><span class="current">{{ a.name }}</span>
+      </nav>
+      <div class="title-row">
+        <div class="stack gap-2 title-block">
+          <div class="row gap-3">
+            <h1 class="page-title">{{ a.name }}</h1>
+            <app-status-badge [status]="a.status" [progress]="a.progress" />
+          </div>
+          @if (a.context) {
+            <p class="context">{{ a.context }}</p>
+          }
+          <p class="small muted num">
+            Lancée le {{ launched() }} ·
+            @switch (a.status) {
+              @case ('done') {
+                Durée {{ duration() }}
+              }
+              @case ('failed') {
+                {{ int(a.total_verbatims) }} verbatims reçus · interrompue après {{ elapsed() }}
+              }
+              @default {
+                {{ int(a.total_verbatims) }} verbatims reçus
+              }
+            }
+            @if (a.source_filename) {
+              · fichier {{ a.source_filename }}
+            }
+          </p>
+        </div>
+        @if (a.status === 'done') {
+          <a class="btn btn-stroked" routerLink="/analyses/nouvelle"><app-icon name="plus" />Nouvelle analyse</a>
+        }
+      </div>
+      @if (a.status === 'done') {
+        <nav class="tabnav" aria-label="Sections de l'analyse">
+          @for (s of sections; track s.id) {
+            <button type="button" [class.is-active]="activeSection() === s.id" (click)="scrollTo(s.id)">{{ s.label }}</button>
+          }
+        </nav>
+      }
+    </div>
+
+    @switch (a.status) {
+      @case ('failed') {
+        <section class="card padded stack gap-6">
+          <div class="failure">
+            <span class="failure-icon"><app-icon name="warning" [size]="22" /></span>
+            <div class="stack gap-2">
+              <h2 class="failure-title">L'analyse n'a pas pu aboutir</h2>
+              <p class="secondary">
+                Elle s'est interrompue à l'étape {{ stepLabel() }}@if (a.error) {&nbsp;: {{ a.error }}}.
+                Aucun résultat n'a été produit et votre fichier n'a pas été modifié.
+              </p>
+              <p class="small muted">
+                Relancez une nouvelle analyse avec le même fichier. Si le problème se reproduit,
+                transmettez la référence <code>{{ reference() }}</code> à l'administrateur.
+              </p>
+            </div>
+          </div>
+          <app-progress-stepper [analysis]="a" />
+        </section>
+        <div class="row gap-3">
+          <a class="btn btn-primary" routerLink="/analyses/nouvelle"><app-icon name="plus" />Nouvelle analyse</a>
+          <a class="btn btn-text" routerLink="/"><app-icon name="arrowLeft" />Retour à la liste</a>
+        </div>
+      }
+      @case ('done') {
+        @if (a.stats; as stats) {
+          <section id="chiffres" class="stack gap-4 no-print">
+            <h2 class="section-title">Chiffres clés</h2>
+            <div class="two-cols">
+              <div class="card padded-md stack gap-5">
+                <div class="kpi-grid">
+                  <div class="stack gap-kpi">
+                    <span class="kpi-label">Verbatims reçus</span>
+                    <span class="kpi-value">{{ int(stats.n_received) }}</span>
+                    <span class="xs muted">lignes du fichier</span>
+                  </div>
+                  <div class="stack gap-kpi">
+                    <span class="kpi-label">Analysés</span>
+                    <span class="kpi-value">{{ int(stats.n_used) }}</span>
+                    <span class="xs muted num">{{ analysedPct() }} des verbatims reçus</span>
+                  </div>
+                  <div class="stack gap-kpi">
+                    <span class="kpi-label">Écartés</span>
+                    <span class="kpi-value muted">{{ int(stats.n_skipped + stats.n_failed) }}</span>
+                    <span class="xs muted">vides ou doublons</span>
+                  </div>
+                </div>
+                <div
+                  class="split-bar"
+                  role="img"
+                  [attr.aria-label]="stats.n_used + ' verbatims analysés sur ' + stats.n_received + ' reçus'"
+                >
+                  <div class="analysed" [style.width.%]="analysedWidth()"></div>
+                  <div class="discarded"></div>
+                </div>
+                <p class="small secondary">
+                  Les réponses vides et les doublons exacts sont écartés avant l'analyse ; ils restent
+                  consultables dans le tableau des verbatims.
+                </p>
+              </div>
+              <div class="card padded-md stack gap-4">
+                <div class="stack">
+                  <h3 class="card-title">Répartition des sentiments</h3>
+                  <p class="small muted">Sur les {{ int(stats.n_used) }} verbatims analysés</p>
+                </div>
+                <app-sentiment-donut [counts]="stats.sentiment_counts" />
+              </div>
+            </div>
+          </section>
+
+          @let r = resultsOf(results());
+          <section id="themes" class="stack gap-4 no-print">
+            <div class="section-head">
+              <div class="stack gap-1">
+                <h2 class="section-title">Thèmes</h2>
+                <p class="small muted">
+                  {{ r?.themes?.length ?? 0 }} thèmes identifiés, triés par nombre de mentions. Un
+                  verbatim peut aborder plusieurs thèmes ; cliquez sur un thème pour filtrer le
+                  tableau des verbatims.
+                </p>
+              </div>
+              <div class="legend xs" aria-label="Légende des barres">
+                <span><span class="legend-dot bg-positive"></span>Positif</span>
+                <span><span class="legend-dot bg-mixed"></span>Mixte</span>
+                <span><span class="legend-dot bg-neutral"></span>Neutre</span>
+                <span><span class="legend-dot bg-negative"></span>Négatif</span>
+              </div>
+            </div>
+            @if (r) {
+              <div class="theme-grid">
+                @for (t of r.themes; track t.id) {
+                  <app-theme-card
+                    [theme]="t"
+                    [nUsed]="stats.n_used"
+                    [selected]="themeFilter() === t.id"
+                    [showQuotes]="showQuotes(t)"
+                    (pick)="pickTheme($event)"
+                  />
+                }
+              </div>
+            } @else {
+              <p class="muted">Chargement des thèmes…</p>
+            }
+          </section>
+
+          @if (a.synthesis_md) {
+            <section id="synthese">
+              <app-synthesis-sheet
+                [markdown]="a.synthesis_md"
+                [name]="a.name"
+                [context]="a.context"
+                [nUsed]="stats.n_used"
+                [generatedOn]="generatedOn()"
+              />
+            </section>
+          }
+
+          <section id="verbatims" class="stack gap-4 no-print">
+            <div class="stack gap-1">
+              <h2 class="section-title">Verbatims</h2>
+              <p class="small muted">
+                {{ int(stats.n_used) }} analysés · {{ int(stats.n_skipped + stats.n_failed) }}
+                écartés. La phrase clé de chaque réponse est surlignée.
+              </p>
+            </div>
+            <app-verbatims-table
+              [analysisId]="a.id"
+              [themes]="r?.themes ?? []"
+              [nSkipped]="stats.n_skipped + stats.n_failed"
+              [(themeId)]="themeFilter"
+            />
+          </section>
+
+          <section id="cout" class="stack gap-4 no-print">
+            <div class="stack gap-1">
+              <h2 class="section-title">Coût de l'analyse</h2>
+              <p class="small muted">Chaque étape détaille ses appels, son modèle, ses tokens et son coût.</p>
+            </div>
+            @if (r) {
+              <app-usage-panel [usage]="r.usage" [nUsed]="stats.n_used" />
+            }
+          </section>
+        }
+      }
+      @default {
+        <section class="card padded-lg stack gap-6">
+          <div class="stack gap-2">
+            <div class="progress-head">
+              <h2 class="card-title">Analyse en cours</h2>
+              <span class="num progress-value">{{ a.progress }} %</span>
+            </div>
+            <div class="progress" role="progressbar" [attr.aria-valuenow]="a.progress" aria-valuemin="0" aria-valuemax="100" aria-label="Avancement de l'analyse">
+              <div class="progress-fill" [style.width.%]="a.progress"></div>
+            </div>
+            <p class="small muted" aria-live="polite">{{ runningDetail() }}</p>
+          </div>
+          <app-progress-stepper [analysis]="a" />
+          <div class="notice">
+            <span class="info-icon"><app-icon name="clock" [size]="20" /></span>
+            <div class="stack">
+              <p class="strong">Environ 1 à 2 minutes pour 200 verbatims</p>
+              <p class="small muted num">
+                Démarrée à {{ startTime() }} · {{ elapsed() }} écoulées · vous pouvez quitter cette
+                page, l'analyse continue et les résultats s'afficheront ici.
+              </p>
+            </div>
+          </div>
+        </section>
+        <div>
+          <a class="btn btn-text back" routerLink="/"><app-icon name="arrowLeft" />Retour à la liste</a>
+        </div>
+      }
+    }
+  }
+</main>

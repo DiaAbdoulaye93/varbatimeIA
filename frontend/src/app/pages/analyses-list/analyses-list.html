@@ -1,0 +1,107 @@
+<main class="page">
+  <div class="header">
+    <div class="stack gap-1">
+      <h1 class="page-title">Analyses</h1>
+      <p class="muted">Vos fichiers de verbatims, leur avancement et leurs résultats.</p>
+    </div>
+    @if (analyses().length) {
+      <a class="btn btn-primary" routerLink="/analyses/nouvelle"><app-icon name="plus" />Nouvelle analyse</a>
+    }
+  </div>
+
+  @if (state() === undefined) {
+    <section class="card loading muted">Chargement des analyses…</section>
+  } @else if (state()?.error) {
+    <section class="card loading" role="alert">
+      Impossible de joindre le serveur. Vérifiez que l'API est démarrée, puis rechargez la page.
+    </section>
+  } @else if (!analyses().length) {
+    <section class="card empty">
+      <span class="empty-icon"><app-icon name="fileLines" [size]="30" [strokeWidth]="1.8" /></span>
+      <div class="stack gap-2 empty-text">
+        <h2>Aucune analyse pour le moment</h2>
+        <p>
+          Chargez un fichier CSV de verbatims : l'outil calcule le sentiment de chaque réponse,
+          regroupe les thèmes abordés et rédige une synthèse exécutive. Comptez 1 à 2 minutes pour
+          200 verbatims.
+        </p>
+      </div>
+      <a class="btn btn-primary" routerLink="/analyses/nouvelle"
+        ><app-icon name="plus" />Lancer ma première analyse</a
+      >
+      <p class="small muted">
+        Format attendu : fichier <code>.csv</code> avec une colonne <code>verbatim</code>
+        obligatoire et une colonne <code>id</code> facultative.
+      </p>
+    </section>
+  } @else {
+    <section class="card list">
+      <div class="table-scroll">
+        <table class="tbl">
+          <thead>
+            <tr>
+              <th class="name-col">Nom</th>
+              <th>Date</th>
+              <th class="right">Verbatims</th>
+              <th>Statut</th>
+              <th><span class="sr-only">Ouvrir</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (a of rows(); track a.id) {
+              <tr>
+                <td>
+                  <a class="rowlink" [routerLink]="['/analyses', a.id]">{{ a.name }}</a>
+                  @if (a.context) {
+                    <div class="xs muted context">{{ a.context }}</div>
+                  }
+                </td>
+                <td class="num nowrap">{{ date(a.created_at) }}</td>
+                <td class="num right">{{ int(a.total_verbatims) }}</td>
+                <td>
+                  <div class="stack gap-status">
+                    <app-status-badge [status]="a.status" [progress]="a.progress" />
+                    @if (a.status === 'processing') {
+                      <div
+                        class="progress progress-thin mini"
+                        role="progressbar"
+                        [attr.aria-valuenow]="a.progress"
+                        aria-valuemin="0"
+                        aria-valuemax="100"
+                        [attr.aria-label]="'Avancement ' + a.progress + ' %'"
+                      >
+                        <div class="progress-fill" [style.width.%]="a.progress"></div>
+                      </div>
+                    }
+                  </div>
+                </td>
+                <td class="right nowrap">
+                  <a class="btn btn-text" [routerLink]="['/analyses', a.id]"
+                    >Ouvrir<app-icon name="chevronRight"
+                  /></a>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <div class="paginator">
+        <span class="num">{{ rangeLabel() }}</span>
+        <div class="row">
+          <button type="button" class="btn btn-icon" aria-label="Première page" [disabled]="page() === 0" (click)="goTo(0)">
+            <app-icon name="first" />
+          </button>
+          <button type="button" class="btn btn-icon" aria-label="Page précédente" [disabled]="page() === 0" (click)="goTo(page() - 1)">
+            <app-icon name="chevronLeft" />
+          </button>
+          <button type="button" class="btn btn-icon" aria-label="Page suivante" [disabled]="page() >= pageCount() - 1" (click)="goTo(page() + 1)">
+            <app-icon name="chevronRight" />
+          </button>
+          <button type="button" class="btn btn-icon" aria-label="Dernière page" [disabled]="page() >= pageCount() - 1" (click)="goTo(pageCount() - 1)">
+            <app-icon name="last" />
+          </button>
+        </div>
+      </div>
+    </section>
+  }
+</main>

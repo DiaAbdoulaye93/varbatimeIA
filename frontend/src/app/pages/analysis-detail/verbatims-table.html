@@ -1,0 +1,125 @@
+<div class="card filters">
+  <div class="filter-row">
+    <div class="select-wrap grow-1">
+      <label class="sr-only" for="f-sent">Sentiment</label>
+      <select id="f-sent" class="select" [value]="sentiment() ?? ''" (change)="onSentiment($event)">
+        <option value="">Tous les sentiments</option>
+        @for (o of sentimentOptions; track o.value) {
+          <option [value]="o.value" [selected]="sentiment() === o.value">{{ o.label }}</option>
+        }
+      </select>
+    </div>
+    <div class="select-wrap grow-1">
+      <label class="sr-only" for="f-theme">Thème</label>
+      <select id="f-theme" class="select" (change)="onTheme($event)">
+        <option value="" [selected]="themeId() === null">Tous les thèmes</option>
+        @for (t of themes(); track t.id) {
+          <option [value]="t.id" [selected]="themeId() === t.id">{{ t.label }}</option>
+        }
+      </select>
+    </div>
+    <div class="input-wrap grow-2">
+      <label class="sr-only" for="f-search">Rechercher dans le texte</label>
+      <span class="search-icon"><app-icon name="search" /></span>
+      <input id="f-search" class="input" type="search" placeholder="Rechercher dans le texte…" [value]="search()" (input)="onSearch($event)" />
+    </div>
+    <label class="check">
+      <input type="checkbox" [checked]="includeSkipped()" (change)="onIncludeSkipped($event)" />
+      Afficher les verbatims écartés ({{ nSkipped() }})
+    </label>
+  </div>
+  @if (anyFilter()) {
+    <div class="active-filters">
+      <span class="xs muted">Filtres actifs :</span>
+      @if (themeId() !== null) {
+        <button type="button" class="chip chip-sm chip-selected" (click)="themeId.set(null)" aria-label="Retirer le filtre thème">
+          Thème : {{ themeLabel() }}<app-icon name="close" [size]="14" [strokeWidth]="2.5" />
+        </button>
+      }
+      @if (sentiment()) {
+        <button type="button" class="chip chip-sm chip-selected" (click)="sentiment.set(null)" aria-label="Retirer le filtre sentiment">
+          Sentiment : {{ sentimentLabel() }}<app-icon name="close" [size]="14" [strokeWidth]="2.5" />
+        </button>
+      }
+      @if (search().trim()) {
+        <button type="button" class="chip chip-sm chip-selected" (click)="search.set('')" aria-label="Effacer la recherche">
+          Texte : « {{ search().trim() }} »<app-icon name="close" [size]="14" [strokeWidth]="2.5" />
+        </button>
+      }
+      <button type="button" class="btn btn-text compact" (click)="reset()">Réinitialiser</button>
+    </div>
+  }
+</div>
+
+<div class="card table-card">
+  <div class="table-scroll">
+    <table class="tbl" [attr.aria-busy]="loading()">
+      <thead>
+        <tr>
+          <th class="no-col">N°</th>
+          <th class="text-col">Verbatim</th>
+          <th>Sentiment</th>
+          <th>Thèmes</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (r of rows(); track r.idx) {
+          <tr [class.row-off]="r.off">
+            <td class="num muted nowrap">{{ r.idx }}</td>
+            <td class="text">
+              @if (r.off) {
+                <span class="off-text">{{ r.offText }}</span>
+              } @else {
+                {{ r.before }}@if (r.key) {<mark>{{ r.key }}</mark>}{{ r.after }}
+              }
+            </td>
+            <td class="nowrap top">
+              <app-sentiment-badge [sentiment]="r.sentiment" />
+              @if (r.off) {
+                <div class="xs muted motif">{{ r.motif }}</div>
+              }
+            </td>
+            <td class="top">
+              <div class="chips">
+                @for (c of r.themes; track c.id) {
+                  <button type="button" class="chip chip-sm" [class.chip-selected]="themeId() === c.id" (click)="themeId.set(c.id)">
+                    {{ c.label }}
+                  </button>
+                }
+              </div>
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="4" class="empty muted">
+              @if (failed()) {
+                Impossible de charger les verbatims. Réessayez dans un instant.
+              } @else if (loading()) {
+                Chargement…
+              } @else {
+                Aucun verbatim ne correspond aux filtres choisis.
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+  <div class="paginator">
+    <div class="row gap-2">
+      <label for="page-size">Éléments par page :</label>
+      <select id="page-size" class="size-select" (change)="onSize($event)">
+        @for (s of pageSizes; track s) {
+          <option [value]="s" [selected]="size() === s">{{ s }}</option>
+        }
+      </select>
+    </div>
+    <span class="num">{{ rangeLabel() }}</span>
+    <div class="row">
+      <button type="button" class="btn btn-icon" aria-label="Première page" [disabled]="page() <= 1" (click)="goTo(1)"><app-icon name="first" /></button>
+      <button type="button" class="btn btn-icon" aria-label="Page précédente" [disabled]="page() <= 1" (click)="goTo(page() - 1)"><app-icon name="chevronLeft" /></button>
+      <button type="button" class="btn btn-icon" aria-label="Page suivante" [disabled]="page() >= pageCount()" (click)="goTo(page() + 1)"><app-icon name="chevronRight" /></button>
+      <button type="button" class="btn btn-icon" aria-label="Dernière page" [disabled]="page() >= pageCount()" (click)="goTo(pageCount())"><app-icon name="last" /></button>
+    </div>
+  </div>
+</div>
