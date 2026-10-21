@@ -60,8 +60,11 @@ def create_analysis(
     except CsvError as exc:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(exc)) from exc
 
-    label = (name or "").strip() or Path(file.filename or "analyse").stem
-    analysis, reused = create_or_reuse(session, name=label, context=context.strip(), texts=texts)
+    filename = Path(file.filename).name if file.filename else None
+    label = (name or "").strip() or Path(filename or "analyse").stem
+    analysis, reused = create_or_reuse(
+        session, name=label, context=context.strip(), texts=texts, source_filename=filename
+    )
     if not reused:
         background_tasks.add_task(
             run_analysis, engine, analysis.id, texts, settings, client_factory
@@ -195,7 +198,7 @@ def _sum_usage(step: str, calls: list[LlmCall]) -> StepUsage:
 
 
 @router.get("/{analysis_id}/usage", response_model=UsageOut)
-def get_usage(analysis_id: str, session: SessionDep) -> UsageOut:
+def get_usage(analysis_id: str, session: SessionDep, settings: SettingsDep) -> UsageOut:
     analysis = _get_analysis(session, analysis_id)
     calls = list(
         session.exec(
@@ -212,4 +215,5 @@ def get_usage(analysis_id: str, session: SessionDep) -> UsageOut:
         steps=[_sum_usage(step, by_step[step]) for step in order],
         total=_sum_usage("total", calls),
         analysis_duration_ms=analysis.duration_ms,
+        usd_to_xof=settings.usd_to_xof,
     )

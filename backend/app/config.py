@@ -43,6 +43,9 @@ class Settings(BaseSettings):
     database_url: str = "postgresql+psycopg://postgres@localhost:5432/sat_verbatim"
     test_database_url: str = "postgresql+psycopg://postgres@localhost:5432/sat_verbatim_test"
 
+    # Indicative rate for the FCFA figures of the dashboard; set it to the day's rate.
+    usd_to_xof: float = 604.0
+
     log_level: str = "INFO"
 
 

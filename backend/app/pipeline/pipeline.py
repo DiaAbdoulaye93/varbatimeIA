@@ -16,6 +16,7 @@ from app.schemas import (
     ExtractionItem,
     PipelineResult,
     PreprocessedVerbatim,
+    ProgressInfo,
     UsageRecord,
     VerbatimResult,
     empty_sentiment_counts,
@@ -25,8 +26,8 @@ logger = logging.getLogger(__name__)
 
 EXTRACTION_FAILED = "extraction_failed"
 
-# Called with (current_step, progress 0-100) whenever the pipeline moves forward.
-ProgressCallback = Callable[[str, int], None]
+# Called with (current_step, progress 0-100, details) whenever the pipeline moves forward.
+ProgressCallback = Callable[[str, int, ProgressInfo], None]
 
 # Progress bounds of the extraction step, the longest one.
 _EXTRACT_START, _EXTRACT_END = 5, 80
@@ -88,25 +89,27 @@ def run_pipeline(
     start = time.perf_counter()
     first_usage = len(client.usage)
 
+    info = ProgressInfo()
+
     def notify(step: str, progress: int) -> None:
         logger.info("step %s (%d %%)", step, progress)
         if on_progress is not None:
-            on_progress(step, progress)
+            on_progress(step, progress, info.model_copy())
 
     notify("preprocess", 0)
     preprocessed = preprocess(texts)
     kept = [p for p in preprocessed if p.skipped_reason is None]
     norm_texts = {p.idx: p.text_norm for p in preprocessed}
+    info.n_kept, info.n_skipped = len(kept), len(preprocessed) - len(kept)
 
     notify("extract", _EXTRACT_START)
     span = _EXTRACT_END - _EXTRACT_START
-    extractions = extract(
-        client,
-        settings,
-        kept,
-        context,
-        on_progress=lambda done, total: notify("extract", _EXTRACT_START + span * done // total),
-    )
+
+    def on_batch(done: int, total: int) -> None:
+        info.batch_done, info.batch_total = done, total
+        notify("extract", _EXTRACT_START + span * done // total)
+
+    extractions = extract(client, settings, kept, context, on_progress=on_batch)
 
     notify("cluster", 85)
     themes, theme_ids = cluster(client, settings, extractions, norm_texts, context)

@@ -48,7 +48,12 @@ def content_hash(texts: Sequence[str], context: str) -> str:
 
 
 def create_or_reuse(
-    session: Session, *, name: str, context: str, texts: Sequence[str]
+    session: Session,
+    *,
+    name: str,
+    context: str,
+    texts: Sequence[str],
+    source_filename: str | None = None,
 ) -> tuple[Analysis, bool]:
     """Return (analysis, reused). A done or running identical analysis is reused."""
     key = content_hash(texts, context)
@@ -61,7 +66,13 @@ def create_or_reuse(
     if existing is not None:
         logger.info("reusing analysis %s (same content hash)", existing.id)
         return existing, True
-    analysis = Analysis(name=name, context=context, content_hash=key, total_verbatims=len(texts))
+    analysis = Analysis(
+        name=name,
+        context=context,
+        source_filename=source_filename,
+        content_hash=key,
+        total_verbatims=len(texts),
+    )
     session.add(analysis)
     session.commit()
     session.refresh(analysis)
@@ -179,8 +190,12 @@ def run_analysis(
             settings,
             texts,
             context,
-            on_progress=lambda step, progress: _update(
-                engine, analysis_id, current_step=step, progress=progress
+            on_progress=lambda step, progress, info: _update(
+                engine,
+                analysis_id,
+                current_step=step,
+                progress=progress,
+                progress_info=info.model_dump(exclude_none=True),
             ),
         )
         _persist_result(engine, analysis_id, result, client.usage)

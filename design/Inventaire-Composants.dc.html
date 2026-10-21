@@ -1,0 +1,305 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Inventaire des composants</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{--font-sans:"IBM Plex Sans","Segoe UI",Roboto,Helvetica,Arial,sans-serif;--font-serif:"IBM Plex Serif",Georgia,"Times New Roman",serif;--font-mono:"IBM Plex Mono",Consolas,"Courier New",monospace;--color-primary:#2451B5;--color-primary-strong:#1B3F8F;--color-primary-soft:#E8EEFB;--color-primary-ink:#17347A;--color-ink:#16202A;--color-ink-secondary:#3F4B5A;--color-ink-muted:#5B6776;--color-ink-disabled:#8A94A1;--color-background:#F3F5F8;--color-surface:#FFFFFF;--color-surface-alt:#F8FAFC;--color-border:#DCE2EA;--color-border-strong:#AEB8C4;--color-positive:#166534;--color-positive-soft:#DCFCE7;--color-positive-ink:#14532D;--color-neutral:#6B7280;--color-neutral-soft:#E5E7EB;--color-neutral-ink:#374151;--color-negative:#B91C1C;--color-negative-soft:#FEE2E2;--color-negative-ink:#7F1D1D;--color-mixed:#D97706;--color-mixed-soft:#FEF3C7;--color-mixed-ink:#78350F;--color-discarded:#9AA3AE;--color-discarded-soft:#F1F3F6;--color-highlight:#E8EEFB}
+*{box-sizing:border-box}
+body{margin:0;font-family:var(--font-sans);font-size:14px;line-height:1.5;color:#16202A;background:#F3F5F8;-webkit-font-smoothing:antialiased}
+a{color:#2451B5}a:hover{color:#1B3F8F}
+h1,h2,h3,h4,p,ul,ol{margin:0}
+:focus-visible{outline:2px solid #2451B5;outline-offset:2px}
+.page{width:100%;max-width:1200px;margin:0 auto;padding:40px 32px 64px}
+@media (max-width:768px){.page{padding:16px 16px 40px}}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:40px;padding:0 20px;border-radius:8px;font-family:var(--font-sans);font-size:14px;font-weight:500;line-height:1;text-decoration:none;cursor:pointer;border:1px solid transparent;white-space:nowrap}
+.btn svg{width:18px;height:18px;flex:none}
+.btn-primary{background:#2451B5;color:#FFFFFF}.btn-primary:hover{background:#1B3F8F;color:#FFFFFF}
+.btn-stroked{background:#FFFFFF;color:#2451B5;border-color:#AEB8C4}.btn-stroked:hover{background:#E8EEFB;color:#1B3F8F}
+.btn-text{background:transparent;color:#2451B5;padding:0 12px}.btn-text:hover{background:#E8EEFB;color:#1B3F8F}
+.btn-disabled,.btn[disabled]{background:#E5E7EB;color:#8A94A1;border-color:transparent;cursor:not-allowed;pointer-events:none}
+.btn-busy{background:#2451B5;color:#FFFFFF;opacity:.85;cursor:progress;pointer-events:none}
+.btn-icon{width:40px;padding:0;border-radius:999px;background:transparent;color:#5B6776}.btn-icon:hover{background:#E8EEFB;color:#1B3F8F}
+.btn-icon-disabled{color:#C3CAD3;pointer-events:none}
+.badge{display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 10px 0 5px;border-radius:999px;font-size:12px;font-weight:600;line-height:1;white-space:nowrap}
+.badge .glyph{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:999px;color:#FFFFFF;font-family:var(--font-mono);font-size:12px;font-weight:700;line-height:1}
+.badge-lg{height:30px;font-size:13px;padding:0 12px 0 6px}.badge-lg .glyph{width:20px;height:20px;font-size:14px}
+.sent-pos{background:#DCFCE7;color:#14532D}.sent-pos .glyph{background:#166534}
+.sent-neu{background:#E5E7EB;color:#374151}.sent-neu .glyph{background:#6B7280}
+.sent-neg{background:#FEE2E2;color:#7F1D1D}.sent-neg .glyph{background:#B91C1C}
+.sent-mix{background:#FEF3C7;color:#78350F}.sent-mix .glyph{background:#D97706}
+.sent-off{background:#F1F3F6;color:#5B6776;border:1px dashed #AEB8C4}.sent-off .glyph{background:#9AA3AE}
+.status{display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 10px 0 8px;border-radius:999px;font-size:12px;font-weight:600;line-height:1;border:1px solid;white-space:nowrap}
+.status svg{width:14px;height:14px;flex:none}
+.st-pending{color:#374151;border-color:#AEB8C4;background:#FFFFFF}
+.st-running{color:#17347A;border-color:#2451B5;background:#E8EEFB}
+.st-done{color:#14532D;border-color:#166534;background:#DCFCE7}
+.st-failed{color:#7F1D1D;border-color:#B91C1C;background:#FEE2E2}
+.chip{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 12px;border-radius:8px;border:1px solid #AEB8C4;background:#FFFFFF;color:#16202A;font-family:var(--font-sans);font-size:13px;font-weight:500;line-height:1;cursor:pointer;white-space:nowrap;text-decoration:none}
+.chip:hover{background:#F3F5F8}
+.chip-selected{background:#E8EEFB;border-color:#2451B5;color:#17347A}
+.chip-sm{height:26px;padding:0 10px;font-size:12px}
+.chip svg{width:14px;height:14px;flex:none}
+.field{display:flex;flex-direction:column;gap:6px;min-width:0}
+.field-box{position:relative;border:1px solid #AEB8C4;border-radius:8px;background:#FFFFFF;min-height:56px;padding:17px 16px 11px;display:flex;align-items:center;gap:12px}
+.field-label{position:absolute;top:-8px;left:12px;padding:0 4px;background:#FFFFFF;font-size:12px;line-height:16px;color:#5B6776}
+.field-input{width:100%;border:0;outline:0;background:transparent;font-family:var(--font-sans);font-size:15px;line-height:1.4;color:#16202A;padding:0;resize:vertical;min-height:0}
+.field-input::placeholder{color:#8A94A1}
+.field-hint{font-size:12px;line-height:1.4;color:#5B6776;padding:0 16px}
+.field-focus .field-box{border:2px solid #2451B5;padding:16px 15px 10px}.field-focus .field-label{color:#2451B5}
+.field-error .field-box{border:2px solid #B91C1C;padding:16px 15px 10px}.field-error .field-label{color:#B91C1C}.field-error .field-hint{color:#B91C1C}
+.field-disabled .field-box{background:#F3F5F8;border-style:dashed}.field-disabled .field-input{color:#8A94A1}.field-disabled .field-label{background:#F3F5F8;color:#8A94A1}
+.tbl{width:100%;border-collapse:collapse;font-size:14px}
+.tbl th{text-align:left;font-size:12px;font-weight:600;letter-spacing:.02em;color:#5B6776;padding:0 16px;height:48px;border-bottom:1px solid #DCE2EA;white-space:nowrap;background:#F8FAFC}
+.tbl td{padding:12px 16px;border-bottom:1px solid #E7ECF2;vertical-align:middle;color:#16202A}
+.row-off td{color:#6B7280;background:#F8FAFC}
+.num{font-variant-numeric:tabular-nums}
+.progress{height:8px;border-radius:4px;background:#DCE2EA;overflow:hidden;position:relative}
+.progress-fill{height:100%;background:#2451B5;border-radius:4px}
+.progress-thin{height:4px;border-radius:2px}
+@keyframes indet{0%{left:-40%}100%{left:100%}}
+.progress-indet::after{content:"";position:absolute;top:0;bottom:0;left:-40%;width:40%;background:#2451B5;border-radius:4px;animation:indet 1.4s ease-in-out infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.spin{animation:spin 1s linear infinite;transform-origin:center}
+mark{background:#E8EEFB;color:#17347A;padding:0 2px;border-radius:2px;box-shadow:inset 0 -2px 0 #2451B5}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.card{background:#FFFFFF;border:1px solid #DCE2EA;border-radius:12px;box-shadow:0 1px 2px rgba(22,32,42,.06)}
+.select{height:40px;width:100%;appearance:none;-webkit-appearance:none;border:1px solid #AEB8C4;border-radius:8px;background:#FFFFFF;padding:0 36px 0 12px;font-family:var(--font-sans);font-size:14px;color:#16202A;cursor:pointer}
+.select-wrap{position:relative;min-width:0}.select-wrap svg{position:absolute;right:10px;top:11px;width:18px;height:18px;color:#5B6776;pointer-events:none}
+.input{height:40px;width:100%;border:1px solid #AEB8C4;border-radius:8px;background:#FFFFFF;padding:0 12px 0 38px;font-family:var(--font-sans);font-size:14px;color:#16202A}
+.input-wrap{position:relative;min-width:0}.input-wrap svg{position:absolute;left:12px;top:11px;width:18px;height:18px;color:#5B6776;pointer-events:none}
+.check{display:inline-flex;align-items:center;gap:8px;font-size:14px;color:#16202A;cursor:pointer;min-height:40px}
+.check input{width:18px;height:18px;accent-color:#2451B5;margin:0}
+.step-dot{width:28px;height:28px;border-radius:999px;display:inline-flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;flex:none;background:#E5E7EB;color:#5B6776}
+.step-dot svg{width:16px;height:16px}
+.step-done{background:#2451B5;color:#FFFFFF}
+.step-active{background:#2451B5;color:#FFFFFF;box-shadow:0 0 0 4px #E8EEFB}
+.step-failed{background:#B91C1C;color:#FFFFFF;box-shadow:0 0 0 4px #FEE2E2}
+.step-label{font-size:14px;font-weight:600;color:#16202A;line-height:1.3}
+.step-sub{font-size:12px;color:#5B6776;line-height:1.3}
+.step-upcoming .step-label{color:#5B6776;font-weight:500}
+.step-error .step-label{color:#7F1D1D}.step-error .step-sub{color:#B91C1C}
+.step-line{flex:1;height:2px;background:#DCE2EA;margin:0 12px;min-width:16px}
+.step-line-done{background:#2451B5}
+.kpi-value{font-size:32px;font-weight:600;line-height:1.1;letter-spacing:-.01em;color:#16202A;font-variant-numeric:tabular-nums}
+.kpi-label{font-size:13px;font-weight:500;color:#5B6776}
+.quote{font-size:13px;line-height:1.5;color:#3F4B5A}
+.tabnav{display:flex;gap:4px;border-bottom:1px solid #DCE2EA;overflow-x:auto}
+.tabnav a{display:inline-flex;align-items:center;height:48px;padding:0 16px;font-size:14px;font-weight:500;color:#3F4B5A;text-decoration:none;border-bottom:2px solid transparent;white-space:nowrap}
+.tabnav .is-active{color:#2451B5;border-bottom-color:#2451B5}
+.legend-dot{width:10px;height:10px;border-radius:999px;display:inline-block;flex:none;vertical-align:middle;margin-right:4px}
+code{font-family:var(--font-mono);font-size:12px;background:#F3F5F8;border:1px solid #DCE2EA;border-radius:4px;padding:1px 5px;white-space:nowrap}
+.inv{display:flex;flex-wrap:wrap;gap:24px;padding:28px 0;border-top:1px solid #DCE2EA}
+.inv-head{flex:0 0 240px;display:flex;flex-direction:column;gap:6px}
+.inv-head h2{font-size:16px;font-weight:600;line-height:1.3}
+.inv-head p{font-size:12px;color:#5B6776;line-height:1.5}
+.inv-head code{align-self:flex-start}
+.inv-body{flex:1 1 560px;min-width:0;display:flex;flex-wrap:wrap;gap:24px 32px;align-items:flex-start}
+figure{margin:0;display:flex;flex-direction:column;gap:8px;align-items:flex-start}
+figcaption{font-size:12px;color:#5B6776}
+</style>
+</helmet>
+<div style="min-height:100vh;background:#F3F5F8">
+<main class="page" style="display:flex;flex-direction:column;gap:8px">
+<div style="display:flex;flex-direction:column;gap:8px;padding-bottom:24px">
+<p style="font-size:12px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#5B6776">Analyseur de verbatims · système de design</p>
+<h1 style="font-size:28px;font-weight:600;line-height:1.2;letter-spacing:-.01em">Inventaire des composants</h1>
+<p style="font-size:15px;color:#3F4B5A;max-width:760px">Chaque composant est rapproché de son équivalent Angular Material ; les composants « maison » sont de simples éléments stylés en SCSS. Les variantes affichées sont celles utilisées dans les trois écrans.</p>
+</div>
+
+<section class="inv">
+<div class="inv-head"><h2>Badge de sentiment</h2><code>span.badge</code><p>Composant maison. Glyphe + libellé, jamais la couleur seule. Le glyphe est aria-hidden, le libellé porte le sens.</p></div>
+<div class="inv-body">
+<figure><span class="badge sent-pos"><span class="glyph" aria-hidden="true">+</span>Positif</span><figcaption>Positif</figcaption></figure>
+<figure><span class="badge sent-neu"><span class="glyph" aria-hidden="true">=</span>Neutre</span><figcaption>Neutre</figcaption></figure>
+<figure><span class="badge sent-neg"><span class="glyph" aria-hidden="true">−</span>Négatif</span><figcaption>Négatif</figcaption></figure>
+<figure><span class="badge sent-mix"><span class="glyph" aria-hidden="true">±</span>Mixte</span><figcaption>Mixte</figcaption></figure>
+<figure><span class="badge sent-off"><span class="glyph" aria-hidden="true">×</span>Écarté</span><figcaption>Écarté (vide ou doublon)</figcaption></figure>
+<figure><span class="badge badge-lg sent-neg"><span class="glyph" aria-hidden="true">−</span>Négatif</span><figcaption>Taille large (légendes)</figcaption></figure>
+</div>
+</section>
+
+<section class="inv">
+<div class="inv-head"><h2>Badge de statut d'analyse</h2><code>span.status</code><p>Composant maison. Contour + icône, pour ne pas confondre avec les sentiments. « En cours » affiche le pourcentage.</p></div>
+<div class="inv-body">
+<figure><span class="status st-pending"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg>En attente</span><figcaption>En attente</figcaption></figure>
+<figure><div style="display:flex;flex-direction:column;gap:6px;align-items:flex-start"><span class="status st-running"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.6-6.4"></path><path d="M21 3v6h-6"></path></svg>En cours · 42&nbsp;%</span><div class="progress progress-thin" style="width:140px"><div class="progress-fill" style="width:42%"></div></div></div><figcaption>En cours, avec %</figcaption></figure>
+<figure><span class="status st-done"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5L20 7"></path></svg>Terminée</span><figcaption>Terminée</figcaption></figure>
+<figure><span class="status st-failed"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 2 21h20L12 3z"></path><path d="M12 10v4m0 3v.5"></path></svg>Échec</span><figcaption>Échec</figcaption></figure>
+</div>
+</section>
+
+<section class="inv">
+<div class="inv-head"><h2>Boutons</h2><code>mat-flat-button · mat-stroked-button · mat-button · mat-icon-button</code><p>Hauteur 40 px, rayon 8 px, icône 18 px à gauche. Un seul bouton principal par écran.</p></div>
+<div class="inv-body">
+<figure><button type="button" class="btn btn-primary"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>Nouvelle analyse</button><figcaption>Principal (flat)</figcaption></figure>
+<figure><button type="button" class="btn btn-stroked">Parcourir…</button><figcaption>Secondaire (stroked)</figcaption></figure>
+<figure><button type="button" class="btn btn-text">Annuler</button><figcaption>Texte</figcaption></figure>
+<figure><button type="button" class="btn btn-primary" disabled="disabled">Lancer l'analyse</button><figcaption>Désactivé</figcaption></figure>
+<figure><button type="button" class="btn btn-busy" aria-disabled="true"><svg class="spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.6-6.4"></path></svg>Envoi en cours…</button><figcaption>Chargement</figcaption></figure>
+<figure><div style="display:flex"><button type="button" class="btn btn-icon" aria-label="Page suivante"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"></path></svg></button><button type="button" class="btn btn-icon btn-icon-disabled" aria-label="Page précédente" aria-disabled="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 6-6 6 6 6"></path></svg></button></div><figcaption>Icône seule (actif, désactivé)</figcaption></figure>
+</div>
+</section>
+
+<section class="inv">
+<div class="inv-head"><h2>Chips de thème</h2><code>mat-chip · mat-chip-option</code><p>Rayon 8 px. Dans le tableau, la chip filtre au clic ; dans la barre de filtres, elle se retire avec la croix.</p></div>
+<div class="inv-body">
+<figure><span class="chip">Service client</span><figcaption>Standard (32 px)</figcaption></figure>
+<figure><span class="chip chip-selected">Couverture et qualité réseau</span><figcaption>Sélectionnée</figcaption></figure>
+<figure><span class="chip chip-sm">Forfaits et pass internet</span><figcaption>Compacte, dans le tableau (26 px)</figcaption></figure>
+<figure><button type="button" class="chip chip-sm chip-selected">Thème : Service client<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"></path></svg></button><figcaption>Filtre actif, retirable</figcaption></figure>
+</div>
+</section>
+
+<section class="inv">
+<div class="inv-head"><h2>Barres de progression</h2><code>mat-progress-bar</code><p>Déterminée (8 px, avec pourcentage) pour l'analyse et l'envoi ; fine (4 px) dans le tableau ; indéterminée pendant un chargement court.</p></div>
+<div class="inv-body" style="flex-direction:column;gap:20px">
+<figure style="width:100%;max-width:520px"><div style="width:100%;display:flex;flex-direction:column;gap:8px"><div style="display:flex;justify-content:space-between;font-size:13px"><span style="font-weight:600">Analyse en cours</span><span class="num" style="font-weight:600;color:#17347A">42&nbsp;%</span></div><div class="progress"><div class="progress-fill" style="width:42%"></div></div></div><figcaption>Déterminée, 8 px</figcaption></figure>
+<figure style="width:100%;max-width:520px"><div class="progress progress-thin" style="width:140px"><div class="progress-fill" style="width:42%"></div></div><figcaption>Fine, 4 px (cellule de tableau)</figcaption></figure>
+<figure style="width:100%;max-width:520px"><div class="progress progress-indet" style="width:100%"></div><figcaption>Indéterminée</figcaption></figure>
+</div>
+</section>
+
+<section class="inv">
+<div class="inv-head"><h2>Stepper</h2><code>mat-stepper (horizontal)</code><p>4 étapes fixes. États : terminé, actif, à venir, échec. À 768 px, les étapes s'empilent verticalement.</p></div>
+<div class="inv-body" style="flex-direction:column">
+<figure style="width:100%">
+<ol style="display:flex;align-items:flex-start;list-style:none;margin:0;padding:0;width:100%">
+<li style="flex:1;display:flex;align-items:center;gap:12px;min-width:0"><span class="step-dot step-done" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"></path></svg></span><span style="display:flex;flex-direction:column;min-width:0"><span class="step-label">Prétraitement</span><span class="step-sub">Terminé</span></span><span class="step-line step-line-done" aria-hidden="true"></span></li>
+<li style="flex:1;display:flex;align-items:center;gap:12px;min-width:0"><span class="step-dot step-active" aria-hidden="true">2</span><span style="display:flex;flex-direction:column;min-width:0"><span class="step-label">Extraction</span><span class="step-sub">En cours</span></span><span class="step-line" aria-hidden="true"></span></li>
+<li class="step-upcoming" style="flex:1;display:flex;align-items:center;gap:12px;min-width:0"><span class="step-dot" aria-hidden="true">3</span><span style="display:flex;flex-direction:column;min-width:0"><span class="step-label">Regroupement des thèmes</span><span class="step-sub">À venir</span></span><span class="step-line" aria-hidden="true"></span></li>
+<li class="step-error" style="flex:0 1 auto;display:flex;align-items:center;gap:12px;min-width:0"><span class="step-dot step-failed" aria-hidden="true">!</span><span style="display:flex;flex-direction:column;min-width:0"><span class="step-label">Synthèse</span><span class="step-sub">Échec</span></span></li>
+</ol>
+<figcaption>Terminé · actif · à venir · échec</figcaption>
+</figure>
+</div>
+</section>
+
+<section class="inv">
+<div class="inv-head"><h2>Champs de formulaire</h2><code>mat-form-field (appearance outline)</code><p>Hauteur 56 px, libellé flottant sur le contour, aide sous le champ. L'erreur remplace l'aide et passe le contour en rouge.</p></div>
+<div class="inv-body" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(260px,100%),1fr))">
+<figure style="align-items:stretch"><div class="field"><div class="field-box"><label class="field-label" for="i1">Nom de l'analyse</label><input class="field-input" id="i1" type="text" placeholder="Nom du fichier par défaut"></div><div class="field-hint">Facultatif.</div></div><figcaption>Vide, avec placeholder</figcaption></figure>
+<figure style="align-items:stretch"><div class="field"><div class="field-box"><label class="field-label" for="i2">Nom de l'analyse</label><input class="field-input" id="i2" type="text" defaultValue="Démo télécom"></div><div class="field-hint">Pré-rempli avec le nom du fichier.</div></div><figcaption>Rempli</figcaption></figure>
+<figure style="align-items:stretch"><div class="field field-focus"><div class="field-box"><label class="field-label" for="i3">Contexte de l'enquête</label><input class="field-input" id="i3" type="text" defaultValue="Enquête post-achat, agence bancaire, Dakar"></div><div class="field-hint">Une phrase suffit.</div></div><figcaption>Focus</figcaption></figure>
+<figure style="align-items:stretch"><div class="field field-error"><div class="field-box"><label class="field-label" for="i4">Fichier de verbatims</label><input class="field-input" id="i4" type="text" defaultValue="enquete_livraison_oct2026.csv"></div><div class="field-hint">Colonne « verbatim » introuvable.</div></div><figcaption>Erreur (mat-error)</figcaption></figure>
+<figure style="align-items:stretch"><div class="field field-disabled"><div class="field-box"><label class="field-label" for="i5">Nom de l'analyse</label><input class="field-input" id="i5" type="text" defaultValue="Post-achat agence Dakar" disabled="disabled"></div><div class="field-hint">Verrouillé pendant l'envoi.</div></div><figcaption>Désactivé</figcaption></figure>
+<figure style="align-items:stretch"><div class="field"><div class="field-box" style="align-items:flex-start"><label class="field-label" for="i6">Contexte de l'enquête</label><textarea class="field-input" id="i6" rows="2" placeholder="Exemple : Enquête post-achat, agence bancaire, Dakar, septembre 2026"></textarea></div><div class="field-hint">Zone de texte, 3 lignes par défaut.</div></div><figcaption>Zone de texte</figcaption></figure>
+</div>
+</section>
+
+<section class="inv">
+<div class="inv-head"><h2>Filtres de tableau</h2><code>mat-select · mat-form-field · mat-checkbox</code><p>Hauteur 40 px pour s'aligner sur les boutons. Une seule rangée au-dessus du tableau, qui passe à la ligne sous 768 px.</p></div>
+<div class="inv-body">
+<figure style="width:220px"><div class="select-wrap"><label class="sr-only" for="s1">Sentiment</label><select id="s1" class="select"><option>Tous les sentiments</option><option>Positif</option></select><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg></div><figcaption>Sélecteur</figcaption></figure>
+<figure style="width:280px"><div class="input-wrap"><label class="sr-only" for="s2">Rechercher</label><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg><input id="s2" class="input" type="search" placeholder="Rechercher dans le texte…"></div><figcaption>Recherche texte</figcaption></figure>
+<figure><label class="check"><input type="checkbox" defaultChecked="checked">Afficher les verbatims écartés (20)</label><figcaption>Case à cocher</figcaption></figure>
+</div>
+</section>
+
+<section class="inv">
+<div class="inv-head"><h2>Zone de dépôt de fichier</h2><code>composant maison + input type=file</code><p>Trois états : vide, fichier sélectionné (contour vert, colonnes détectées), erreur (contour rouge, message et action).</p></div>
+<div class="inv-body" style="flex-direction:column">
+<figure style="width:100%;max-width:640px"><div style="width:100%;border:2px dashed #AEB8C4;border-radius:12px;background:#F8FAFC;padding:24px;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center"><span style="width:40px;height:40px;border-radius:999px;background:#E8EEFB;color:#2451B5;display:inline-flex;align-items:center;justify-content:center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4m0 0-4 4m4-4 4 4"></path><path d="M4 20h16"></path></svg></span><p style="font-weight:500">Glissez-déposez votre fichier CSV ici</p><button type="button" class="btn btn-stroked">Parcourir…</button></div><figcaption>Vide</figcaption></figure>
+<figure style="width:100%;max-width:640px"><div style="width:100%;border:1px solid #166534;border-radius:12px;background:#FFFFFF;padding:14px 18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap"><span style="width:40px;height:40px;border-radius:10px;background:#DCFCE7;color:#166534;display:inline-flex;align-items:center;justify-content:center;flex:none"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><path d="M14 3v6h6"></path></svg></span><div style="flex:1 1 240px;min-width:0"><p style="font-weight:600">verbatims_telecom_sept2026.csv</p><p style="font-size:13px;color:#5B6776">48 Ko · 223 lignes · colonnes : <code>id</code>, <code>verbatim</code></p></div><button type="button" class="btn btn-text">Retirer</button></div><figcaption>Fichier sélectionné</figcaption></figure>
+<figure style="width:100%;max-width:640px"><div style="width:100%;border:2px solid #B91C1C;border-radius:12px;background:#FFF7F7;padding:14px 18px;display:flex;align-items:flex-start;gap:14px;flex-wrap:wrap"><span style="width:40px;height:40px;border-radius:10px;background:#FEE2E2;color:#B91C1C;display:inline-flex;align-items:center;justify-content:center;flex:none"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 2 21h20L12 3z"></path><path d="M12 10v4m0 3v.5"></path></svg></span><div style="flex:1 1 240px;min-width:0"><p style="font-weight:600;color:#7F1D1D">Colonne « verbatim » introuvable</p><p style="font-size:13px;color:#3F4B5A">Autres messages du même gabarit : « Le fichier est vide », « Format non pris en charge : utilisez un fichier .csv », « Fichier trop volumineux ».</p></div><button type="button" class="btn btn-stroked">Choisir un autre fichier</button></div><figcaption>Erreur de fichier</figcaption></figure>
+</div>
+</section>
+
+<section class="inv">
+<div class="inv-head"><h2>Graphiques</h2><code>ng2-charts · Chart.js (doughnut, bar horizontal stacked)</code><p>Couleurs de sentiment identiques partout, ordre fixe Positif → Mixte → Neutre → Négatif, 2 px d'espace entre segments, légende et compteurs toujours affichés.</p></div>
+<div class="inv-body">
+<figure><div style="display:flex;align-items:center;gap:20px"><svg width="140" height="140" viewBox="0 0 42 42" role="img" aria-label="Répartition des sentiments : 27 % positifs, 16 % mixtes, 16 % neutres, 41 % négatifs"><circle cx="21" cy="21" r="15.9155" fill="none" stroke="#F3F5F8" stroke-width="5"></circle><circle cx="21" cy="21" r="15.9155" fill="none" stroke="#166534" stroke-width="5" stroke-dasharray="26.1 73.9" stroke-dashoffset="25"></circle><circle cx="21" cy="21" r="15.9155" fill="none" stroke="#D97706" stroke-width="5" stroke-dasharray="14.7 85.3" stroke-dashoffset="-2.1"></circle><circle cx="21" cy="21" r="15.9155" fill="none" stroke="#6B7280" stroke-width="5" stroke-dasharray="14.8 85.2" stroke-dashoffset="-17.8"></circle><circle cx="21" cy="21" r="15.9155" fill="none" stroke="#B91C1C" stroke-width="5" stroke-dasharray="40.4 59.6" stroke-dashoffset="-33.6"></circle><text x="21" y="20.2" text-anchor="middle" font-size="7.5" font-weight="600" fill="#16202A" font-family="IBM Plex Sans, Segoe UI, sans-serif">203</text><text x="21" y="25.2" text-anchor="middle" font-size="2.8" fill="#5B6776" font-family="IBM Plex Sans, Segoe UI, sans-serif">analysés</text></svg><ul style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px;font-size:13px"><li class="num"><span class="legend-dot" style="background:#166534"></span>Positif <strong>55</strong> · 27&nbsp;%</li><li class="num"><span class="legend-dot" style="background:#D97706"></span>Mixte <strong>32</strong> · 16&nbsp;%</li><li class="num"><span class="legend-dot" style="background:#6B7280"></span>Neutre <strong>32</strong> · 16&nbsp;%</li><li class="num"><span class="legend-dot" style="background:#B91C1C"></span>Négatif <strong>84</strong> · 41&nbsp;%</li></ul></div><figcaption>Donut avec total au centre et légende chiffrée</figcaption></figure>
+<figure style="width:100%;max-width:420px"><div style="width:100%;display:flex;flex-direction:column;gap:6px"><div style="display:flex;gap:2px;height:10px;border-radius:5px;overflow:hidden;background:#F3F5F8" role="img" aria-label="8 positifs, 13 mixtes, 1 neutre, 23 négatifs"><div style="width:17.8%;background:#166534"></div><div style="width:28.9%;background:#D97706"></div><div style="width:2.2%;background:#6B7280"></div><div style="width:51.1%;background:#B91C1C"></div></div><div class="num" style="display:flex;flex-wrap:wrap;gap:4px 12px;font-size:12px;color:#3F4B5A"><span><span class="legend-dot" style="background:#166534"></span>Positif 8</span><span><span class="legend-dot" style="background:#D97706"></span>Mixte 13</span><span><span class="legend-dot" style="background:#6B7280"></span>Neutre 1</span><span><span class="legend-dot" style="background:#B91C1C"></span>Négatif 23</span></div></div><figcaption>Barre horizontale empilée + compteurs</figcaption></figure>
+</div>
+</section>
+
+<section class="inv">
+<div class="inv-head"><h2>Carte de thème</h2><code>mat-card (composant maison stylé)</code><p>Rang, libellé, description d'une ligne, mentions et %, barre empilée, 2 citations, action de filtrage. État sélectionné : anneau primaire 2 px.</p></div>
+<div class="inv-body" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(300px,100%),1fr))">
+<figure style="align-items:stretch"><article class="card" style="padding:20px;display:flex;flex-direction:column;gap:12px"><div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start"><div style="display:flex;gap:10px;align-items:baseline"><span class="num" style="font-size:12px;font-weight:600;color:#5B6776">1</span><h3 style="font-size:16px;font-weight:600;line-height:1.3">Couverture et qualité réseau</h3></div><div style="text-align:right;flex:none"><div class="num" style="font-size:18px;font-weight:600;line-height:1.1">45</div><div style="font-size:12px;color:#5B6776;white-space:nowrap">mentions · 22&nbsp;%</div></div></div><p style="font-size:13px;color:#5B6776;line-height:1.45">Disponibilité du réseau mobile, zones mal couvertes, pannes, qualité des appels.</p><div style="display:flex;gap:2px;height:10px;border-radius:5px;overflow:hidden;background:#F3F5F8"><div style="width:17.8%;background:#166534"></div><div style="width:28.9%;background:#D97706"></div><div style="width:2.2%;background:#6B7280"></div><div style="width:51.1%;background:#B91C1C"></div></div><div style="display:flex;flex-direction:column;gap:8px;border-top:1px solid #E7ECF2;padding-top:12px"><p class="quote">« Le réseau coupe tout le temps à Pikine, surtout le soir après 20h. c pas normal » <span style="color:#5B6776;white-space:nowrap">— n°&nbsp;1</span></p></div><button type="button" class="btn btn-text" style="align-self:flex-start;margin-left:-12px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5h18l-7 8v6l-4 2v-8z"></path></svg>Voir les 45 verbatims</button></article><figcaption>Par défaut</figcaption></figure>
+<figure style="align-items:stretch"><article class="card" style="padding:20px;display:flex;flex-direction:column;gap:12px;border-color:#2451B5;box-shadow:0 0 0 2px #2451B5"><div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start"><div style="display:flex;gap:10px;align-items:baseline"><span class="num" style="font-size:12px;font-weight:600;color:#5B6776">2</span><h3 style="font-size:16px;font-weight:600;line-height:1.3">Service client</h3></div><div style="text-align:right;flex:none"><div class="num" style="font-size:18px;font-weight:600;line-height:1.1">45</div><div style="font-size:12px;color:#5B6776;white-space:nowrap">mentions · 22&nbsp;%</div></div></div><p style="font-size:13px;color:#5B6776;line-height:1.45">Joignabilité du centre d'appels, délais de réponse, suivi des réclamations.</p><div style="display:flex;gap:2px;height:10px;border-radius:5px;overflow:hidden;background:#F3F5F8"><div style="width:20%;background:#166534"></div><div style="width:20%;background:#D97706"></div><div style="width:4.4%;background:#6B7280"></div><div style="width:55.6%;background:#B91C1C"></div></div><div style="display:flex;flex-direction:column;gap:8px;border-top:1px solid #E7ECF2;padding-top:12px"><p class="quote">« Le service client ne répond jamais, j'ai appelé 3 fois pour ma ligne et personne ne m'a rappelé » <span style="color:#5B6776;white-space:nowrap">— n°&nbsp;9</span></p></div><button type="button" class="btn btn-text" style="align-self:flex-start;margin-left:-12px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5h18l-7 8v6l-4 2v-8z"></path></svg>Filtre actif sur le tableau</button></article><figcaption>Sélectionnée (filtre actif)</figcaption></figure>
+</div>
+</section>
+
+<section class="inv">
+<div class="inv-head"><h2>Tuile chiffre clé</h2><code>composant maison</code><p>Libellé, valeur 32 px tabulaire, précision. Utilisée pour les volumes et pour le coût.</p></div>
+<div class="inv-body">
+<figure><div class="card" style="padding:20px 24px;display:flex;flex-direction:column;gap:6px;min-width:180px"><span class="kpi-label">Analysés</span><span class="kpi-value">203</span><span style="font-size:12px;color:#5B6776">91&nbsp;% des verbatims reçus</span></div><figcaption>Volume</figcaption></figure>
+<figure><div class="card" style="padding:20px 24px;display:flex;flex-direction:column;gap:6px;min-width:180px"><span class="kpi-label">Coût total</span><span class="kpi-value">0,048&nbsp;$</span><span style="font-size:12px;color:#5B6776">≈ 29 FCFA</span></div><figcaption>Coût</figcaption></figure>
+<figure><div class="card" style="padding:20px 24px;display:flex;flex-direction:column;gap:6px;min-width:180px"><span class="kpi-label">Écartés</span><span class="kpi-value" style="color:#5B6776">20</span><span style="font-size:12px;color:#5B6776">vides ou doublons</span></div><figcaption>Valeur secondaire (grisée)</figcaption></figure>
+</div>
+</section>
+
+<section class="inv">
+<div class="inv-head"><h2>Tableau et pagination</h2><code>mat-table · mat-paginator</code><p>En-tête 48 px gris clair, lignes 52 px minimum, chiffres alignés à droite. Ligne écartée grisée avec son motif. Phrase clé surlignée avec <code>mark</code>.</p></div>
+<div class="inv-body" style="flex-direction:column">
+<figure style="width:100%;align-items:stretch">
+<div class="card" style="overflow:hidden">
+<div style="overflow-x:auto">
+<table class="tbl">
+<thead><tr><th style="width:64px">N°</th><th style="min-width:320px">Verbatim</th><th>Sentiment</th><th>Thèmes</th></tr></thead>
+<tbody>
+<tr><td class="num" style="color:#5B6776">1</td><td style="line-height:1.55"><mark>Le réseau coupe tout le temps à Pikine</mark>, surtout le soir après 20h. c pas normal</td><td><span class="badge sent-neg"><span class="glyph" aria-hidden="true">−</span>Négatif</span></td><td><span class="chip chip-sm">Couverture et qualité réseau</span></td></tr>
+<tr><td class="num" style="color:#5B6776">16</td><td style="line-height:1.55">Les <mark>frais de retrait sont trop chers</mark> mais le service est rapide, l'argent arrive tout de suite</td><td><span class="badge sent-mix"><span class="glyph" aria-hidden="true">±</span>Mixte</span></td><td><div style="display:flex;flex-wrap:wrap;gap:6px"><span class="chip chip-sm">Tarification mobile money</span><span class="chip chip-sm">Services mobile money</span></div></td></tr>
+<tr class="row-off"><td class="num">46</td><td style="line-height:1.55">Le service client ne répond jamais, j'ai appelé 3 fois pour ma ligne et personne ne m'a rappelé</td><td><span class="badge sent-off"><span class="glyph" aria-hidden="true">×</span>Écarté</span><div style="font-size:12px;color:#5B6776;margin-top:6px">Motif : doublon du n° 9</div></td><td></td></tr>
+<tr class="row-off"><td class="num">24</td><td><span style="font-style:italic;color:#6B7280">(réponse vide)</span></td><td><span class="badge sent-off"><span class="glyph" aria-hidden="true">×</span>Écarté</span><div style="font-size:12px;color:#5B6776;margin-top:6px">Motif : vide</div></td><td></td></tr>
+</tbody>
+</table>
+</div>
+<div style="display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:8px 24px;padding:8px 16px;border-top:1px solid #DCE2EA;font-size:12px;color:#3F4B5A"><div style="display:flex;align-items:center;gap:8px"><span>Éléments par page :</span><span style="display:inline-flex;align-items:center;gap:4px;border-bottom:1px solid #AEB8C4;padding:4px 0 4px 4px">10<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg></span></div><span class="num">1 – 10 sur 223</span><div style="display:flex"><button type="button" class="btn btn-icon btn-icon-disabled" aria-label="Première page" aria-disabled="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m17 6-6 6 6 6M7 6v12"></path></svg></button><button type="button" class="btn btn-icon btn-icon-disabled" aria-label="Page précédente" aria-disabled="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 6-6 6 6 6"></path></svg></button><button type="button" class="btn btn-icon" aria-label="Page suivante"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"></path></svg></button><button type="button" class="btn btn-icon" aria-label="Dernière page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m7 6 6 6-6 6M17 6v12"></path></svg></button></div></div>
+</div>
+<figcaption>Ligne normale · ligne multi-thèmes · lignes écartées (doublon, vide) · paginateur</figcaption>
+</figure>
+</div>
+</section>
+
+<section class="inv">
+<div class="inv-head"><h2>Panneau de coût</h2><code>mat-card + mat-table</code><p>Quatre tuiles, la ligne de résumé en monospace, puis le détail par étape. Sert d'argument commercial : lisible en un coup d'œil.</p></div>
+<div class="inv-body" style="flex-direction:column">
+<figure style="width:100%;align-items:stretch"><div class="card" style="padding:20px 24px;display:flex;flex-direction:column;gap:16px"><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(140px,100%),1fr));gap:20px"><div style="display:flex;flex-direction:column;gap:4px"><span class="kpi-label">Coût total</span><span class="kpi-value" style="font-size:26px">0,048&nbsp;$</span><span style="font-size:12px;color:#5B6776">≈ 29 FCFA</span></div><div style="display:flex;flex-direction:column;gap:4px"><span class="kpi-label">Par verbatim</span><span class="kpi-value" style="font-size:26px">0,14 <span style="font-size:14px;font-weight:500;color:#5B6776">FCFA</span></span><span style="font-size:12px;color:#5B6776">0,00024&nbsp;$</span></div><div style="display:flex;flex-direction:column;gap:4px"><span class="kpi-label">Durée</span><span class="kpi-value" style="font-size:26px">93&nbsp;s</span><span style="font-size:12px;color:#5B6776">1 min 33 s</span></div><div style="display:flex;flex-direction:column;gap:4px"><span class="kpi-label">Appels</span><span class="kpi-value" style="font-size:26px">11</span><span style="font-size:12px;color:#5B6776">sur 3 étapes</span></div></div><p class="num" style="font-family:var(--font-mono);font-size:12px;line-height:1.6;color:#3F4B5A;background:#F8FAFC;border:1px solid #DCE2EA;border-radius:8px;padding:10px 14px">203 verbatims analysés · 11 appels · 17&nbsp;698 tokens en entrée + 26&nbsp;136 relus depuis le cache · 14&nbsp;662 en sortie · 0,048&nbsp;$ (~29 FCFA) · 93 s</p></div><figcaption>Résumé compact (le détail par étape est un mat-table, voir écran 3c)</figcaption></figure>
+</div>
+</section>
+
+<section class="inv">
+<div class="inv-head"><h2>Citation de verbatim</h2><code>p.quote</code><p>Guillemets français, texte conservé tel quel (fautes et wolof compris), référence du numéro en gris.</p></div>
+<div class="inv-body" style="flex-direction:column">
+<figure style="max-width:520px"><p class="quote">« Ça va, amul solo je suis habitué. » <span style="color:#5B6776;white-space:nowrap">— n°&nbsp;10</span></p><figcaption>Dans une carte de thème</figcaption></figure>
+<figure style="max-width:520px"><p style="font-family:var(--font-serif);font-size:15px;line-height:1.65">Une activation saluée : « Activation de mon pass en 2 minutes, très satisfait. »</p><figcaption>Dans la synthèse exécutive (serif)</figcaption></figure>
+</div>
+</section>
+
+<section class="inv">
+<div class="inv-head"><h2>Messages et états</h2><code>mat-error · bandeau role=alert · état vide</code><p>Un message d'erreur dit ce qui s'est passé, ce qui n'a pas été modifié et quoi faire ensuite. L'état vide porte un seul appel à l'action.</p></div>
+<div class="inv-body" style="flex-direction:column">
+<figure style="width:100%;max-width:640px"><div role="alert" style="width:100%;border:1px solid #B91C1C;border-radius:12px;background:#FFF7F7;padding:14px 18px;display:flex;gap:14px;align-items:flex-start"><span style="width:36px;height:36px;border-radius:999px;background:#FEE2E2;color:#B91C1C;display:inline-flex;align-items:center;justify-content:center;flex:none"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 2 21h20L12 3z"></path><path d="M12 10v4m0 3v.5"></path></svg></span><div><p style="font-weight:600;color:#7F1D1D">L'analyse n'a pas pu aboutir</p><p style="font-size:13px;color:#3F4B5A">Interrompue à l'étape Extraction. Aucun résultat produit, fichier non modifié. Relancez une nouvelle analyse.</p></div></div><figcaption>Bandeau d'échec</figcaption></figure>
+<figure style="width:100%;max-width:640px"><div style="display:flex;gap:12px;align-items:flex-start;background:#F8FAFC;border:1px solid #DCE2EA;border-radius:8px;padding:12px 16px;width:100%"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2451B5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;margin-top:2px"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg><div><p style="font-weight:600">Environ 1 à 2 minutes pour 200 verbatims</p><p style="font-size:13px;color:#5B6776">Vous pouvez quitter cette page, l'analyse continue.</p></div></div><figcaption>Bandeau d'information</figcaption></figure>
+<figure style="width:100%;max-width:640px"><div class="card" style="width:100%;padding:32px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:12px"><span style="width:48px;height:48px;border-radius:999px;background:#E8EEFB;color:#2451B5;display:inline-flex;align-items:center;justify-content:center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><path d="M14 3v6h6"></path></svg></span><p style="font-weight:600;font-size:16px">Aucune analyse pour le moment</p><p style="font-size:13px;color:#3F4B5A">Chargez un fichier CSV de verbatims pour lancer votre première analyse.</p><button type="button" class="btn btn-primary">Nouvelle analyse</button></div><figcaption>État vide</figcaption></figure>
+</div>
+</section>
+
+<section class="inv">
+<div class="inv-head"><h2>Navigation</h2><code>mat-toolbar · fil d'Ariane · mat-tab-nav-bar</code><p>Barre d'application 56 px avec le nom du produit, fil d'Ariane sur les pages internes, onglets d'ancrage pour les sections de l'écran de détail.</p></div>
+<div class="inv-body" style="flex-direction:column">
+<figure style="width:100%;align-items:stretch"><div style="height:56px;background:#FFFFFF;border:1px solid #DCE2EA;border-radius:8px;display:flex;align-items:center;padding:0 24px;gap:10px"><span style="width:28px;height:28px;border-radius:8px;background:#2451B5;color:#FFFFFF;display:inline-flex;align-items:center;justify-content:center;flex:none"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v11H9l-4 3v-3H4z"></path><path d="M8 9h8M8 12.5h5"></path></svg></span><span style="font-size:16px;font-weight:600;letter-spacing:-.01em">Analyseur de verbatims</span></div><figcaption>Barre d'application</figcaption></figure>
+<figure><nav aria-label="Fil d'Ariane" style="display:flex;align-items:center;gap:8px;font-size:13px;color:#5B6776"><span style="color:#2451B5">Analyses</span><span aria-hidden="true">/</span><span style="color:#16202A;font-weight:500">Démo télécom</span></nav><figcaption>Fil d'Ariane</figcaption></figure>
+<figure style="width:100%;align-items:stretch"><nav class="tabnav" aria-label="Sections"><a href="#chiffres" class="is-active">Chiffres clés</a><a href="#themes">Thèmes</a><a href="#synthese">Synthèse exécutive</a><a href="#verbatims">Verbatims</a><a href="#cout">Coût de l'analyse</a></nav><figcaption>Onglets d'ancrage</figcaption></figure>
+</div>
+</section>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":4400}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Variables de design</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{--font-sans:"IBM Plex Sans","Segoe UI",Roboto,Helvetica,Arial,sans-serif;--font-serif:"IBM Plex Serif",Georgia,"Times New Roman",serif;--font-mono:"IBM Plex Mono",Consolas,"Courier New",monospace;--color-primary:#2451B5;--color-primary-strong:#1B3F8F;--color-primary-soft:#E8EEFB;--color-primary-ink:#17347A;--color-ink:#16202A;--color-ink-secondary:#3F4B5A;--color-ink-muted:#5B6776;--color-ink-disabled:#8A94A1;--color-background:#F3F5F8;--color-surface:#FFFFFF;--color-surface-alt:#F8FAFC;--color-border:#DCE2EA;--color-border-strong:#AEB8C4;--color-positive:#166534;--color-positive-soft:#DCFCE7;--color-positive-ink:#14532D;--color-neutral:#6B7280;--color-neutral-soft:#E5E7EB;--color-neutral-ink:#374151;--color-negative:#B91C1C;--color-negative-soft:#FEE2E2;--color-negative-ink:#7F1D1D;--color-mixed:#D97706;--color-mixed-soft:#FEF3C7;--color-mixed-ink:#78350F;--color-discarded:#9AA3AE;--color-discarded-soft:#F1F3F6;--color-highlight:#E8EEFB}
+*{box-sizing:border-box}
+body{margin:0;font-family:var(--font-sans);font-size:14px;line-height:1.5;color:#16202A;background:#F3F5F8;-webkit-font-smoothing:antialiased}
+a{color:#2451B5}a:hover{color:#1B3F8F}
+h1,h2,h3,h4,p,ul,ol{margin:0}
+.page{width:100%;max-width:1200px;margin:0 auto;padding:40px 32px 64px}
+@media (max-width:768px){.page{padding:16px 16px 40px}}
+code{font-family:var(--font-mono);font-size:12px;background:#F3F5F8;border:1px solid #DCE2EA;border-radius:4px;padding:1px 5px;white-space:nowrap}
+.inv{display:flex;flex-wrap:wrap;gap:24px;padding:28px 0;border-top:1px solid #DCE2EA}
+.inv-head{flex:0 0 240px;display:flex;flex-direction:column;gap:6px}
+.inv-head h2{font-size:16px;font-weight:600;line-height:1.3}
+.inv-head p{font-size:12px;color:#5B6776;line-height:1.5}
+.inv-body{flex:1 1 560px;min-width:0;display:flex;flex-direction:column;gap:20px}
+.swatches{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(140px,100%),1fr));gap:16px}
+.sw{display:flex;flex-direction:column;gap:6px}
+.sw-color{height:52px;border-radius:8px;border:1px solid rgba(22,32,42,.08)}
+.sw-name{font-size:12px;font-weight:600;font-family:var(--font-mono);word-break:break-all}
+.sw-hex{font-size:12px;color:#5B6776;font-family:var(--font-mono)}
+.group-title{font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#5B6776}
+.type-row{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 24px;padding:10px 0;border-bottom:1px solid #E7ECF2}
+.type-meta{flex:0 0 220px;font-size:12px;color:#5B6776;font-family:var(--font-mono)}
+.mark-bar{height:24px;background:#2451B5;border-radius:4px}
+.pre{font-family:var(--font-mono);font-size:12.5px;line-height:1.6;background:#16202A;color:#E6EBF2;padding:24px 28px;border-radius:12px;overflow-x:auto;margin:0;white-space:pre}
+</style>
+</helmet>
+<div style="min-height:100vh;background:#F3F5F8">
+<main class="page" style="display:flex;flex-direction:column;gap:8px">
+<div style="display:flex;flex-direction:column;gap:8px;padding-bottom:24px">
+<p style="font-size:12px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#5B6776">Analyseur de verbatims · système de design</p>
+<h1 style="font-size:28px;font-weight:600;line-height:1.2;letter-spacing:-.01em">Variables de design</h1>
+<p style="font-size:15px;color:#3F4B5A;max-width:760px">Couleurs, typographie, espacements, rayons et ombres, sous forme de variables CSS à placer dans <code>styles.scss</code>. Les valeurs des sentiments ont été vérifiées pour les daltonismes (séparation des paires adjacentes) et pour le contraste du texte (≥ 4,5:1).</p>
+</div>
+
+<section class="inv">
+<div class="inv-head"><h2>Couleurs d'interface</h2><p>Un seul accent (bleu) réservé aux actions, liens et sélections. Les gris sont légèrement froids.</p></div>
+<div class="inv-body">
+<div class="swatches">
+<div class="sw"><div class="sw-color" style="background:#2451B5"></div><span class="sw-name">--color-primary</span><span class="sw-hex">#2451B5</span></div>
+<div class="sw"><div class="sw-color" style="background:#1B3F8F"></div><span class="sw-name">--color-primary-strong</span><span class="sw-hex">#1B3F8F</span></div>
+<div class="sw"><div class="sw-color" style="background:#E8EEFB"></div><span class="sw-name">--color-primary-soft</span><span class="sw-hex">#E8EEFB</span></div>
+<div class="sw"><div class="sw-color" style="background:#17347A"></div><span class="sw-name">--color-primary-ink</span><span class="sw-hex">#17347A</span></div>
+<div class="sw"><div class="sw-color" style="background:#16202A"></div><span class="sw-name">--color-ink</span><span class="sw-hex">#16202A</span></div>
+<div class="sw"><div class="sw-color" style="background:#3F4B5A"></div><span class="sw-name">--color-ink-secondary</span><span class="sw-hex">#3F4B5A</span></div>
+<div class="sw"><div class="sw-color" style="background:#5B6776"></div><span class="sw-name">--color-ink-muted</span><span class="sw-hex">#5B6776</span></div>
+<div class="sw"><div class="sw-color" style="background:#8A94A1"></div><span class="sw-name">--color-ink-disabled</span><span class="sw-hex">#8A94A1</span></div>
+<div class="sw"><div class="sw-color" style="background:#F3F5F8"></div><span class="sw-name">--color-background</span><span class="sw-hex">#F3F5F8</span></div>
+<div class="sw"><div class="sw-color" style="background:#FFFFFF"></div><span class="sw-name">--color-surface</span><span class="sw-hex">#FFFFFF</span></div>
+<div class="sw"><div class="sw-color" style="background:#F8FAFC"></div><span class="sw-name">--color-surface-alt</span><span class="sw-hex">#F8FAFC</span></div>
+<div class="sw"><div class="sw-color" style="background:#DCE2EA"></div><span class="sw-name">--color-border</span><span class="sw-hex">#DCE2EA</span></div>
+<div class="sw"><div class="sw-color" style="background:#AEB8C4"></div><span class="sw-name">--color-border-strong</span><span class="sw-hex">#AEB8C4</span></div>
+</div>
+</div>
+</section>
+
+<section class="inv">
+<div class="inv-head"><h2>Couleurs des sentiments</h2><p>Trois tons par sentiment : base (graphiques, glyphes), soft (fond de badge), ink (texte sur fond soft). Même couleur partout, du donut au tableau.</p></div>
+<div class="inv-body">
+<div class="group-title">Positif · vert</div>
+<div class="swatches">
+<div class="sw"><div class="sw-color" style="background:#166534"></div><span class="sw-name">--color-positive</span><span class="sw-hex">#166534</span></div>
+<div class="sw"><div class="sw-color" style="background:#DCFCE7"></div><span class="sw-name">--color-positive-soft</span><span class="sw-hex">#DCFCE7</span></div>
+<div class="sw"><div class="sw-color" style="background:#14532D"></div><span class="sw-name">--color-positive-ink</span><span class="sw-hex">#14532D</span></div>
+</div>
+<div class="group-title">Neutre · gris</div>
+<div class="swatches">
+<div class="sw"><div class="sw-color" style="background:#6B7280"></div><span class="sw-name">--color-neutral</span><span class="sw-hex">#6B7280</span></div>
+<div class="sw"><div class="sw-color" style="background:#E5E7EB"></div><span class="sw-name">--color-neutral-soft</span><span class="sw-hex">#E5E7EB</span></div>
+<div class="sw"><div class="sw-color" style="background:#374151"></div><span class="sw-name">--color-neutral-ink</span><span class="sw-hex">#374151</span></div>
+</div>
+<div class="group-title">Négatif · rouge</div>
+<div class="swatches">
+<div class="sw"><div class="sw-color" style="background:#B91C1C"></div><span class="sw-name">--color-negative</span><span class="sw-hex">#B91C1C</span></div>
+<div class="sw"><div class="sw-color" style="background:#FEE2E2"></div><span class="sw-name">--color-negative-soft</span><span class="sw-hex">#FEE2E2</span></div>
+<div class="sw"><div class="sw-color" style="background:#7F1D1D"></div><span class="sw-name">--color-negative-ink</span><span class="sw-hex">#7F1D1D</span></div>
+</div>
+<div class="group-title">Mixte · ambre</div>
+<div class="swatches">
+<div class="sw"><div class="sw-color" style="background:#D97706"></div><span class="sw-name">--color-mixed</span><span class="sw-hex">#D97706</span></div>
+<div class="sw"><div class="sw-color" style="background:#FEF3C7"></div><span class="sw-name">--color-mixed-soft</span><span class="sw-hex">#FEF3C7</span></div>
+<div class="sw"><div class="sw-color" style="background:#78350F"></div><span class="sw-name">--color-mixed-ink</span><span class="sw-hex">#78350F</span></div>
+</div>
+<div class="group-title">Écarté · statuts · surlignage</div>
+<div class="swatches">
+<div class="sw"><div class="sw-color" style="background:#9AA3AE"></div><span class="sw-name">--color-discarded</span><span class="sw-hex">#9AA3AE</span></div>
+<div class="sw"><div class="sw-color" style="background:#F1F3F6"></div><span class="sw-name">--color-discarded-soft</span><span class="sw-hex">#F1F3F6</span></div>
+<div class="sw"><div class="sw-color" style="background:#6B7280"></div><span class="sw-name">--color-status-pending</span><span class="sw-hex">#6B7280</span></div>
+<div class="sw"><div class="sw-color" style="background:#2451B5"></div><span class="sw-name">--color-status-running</span><span class="sw-hex">#2451B5</span></div>
+<div class="sw"><div class="sw-color" style="background:#166534"></div><span class="sw-name">--color-status-done</span><span class="sw-hex">#166534</span></div>
+<div class="sw"><div class="sw-color" style="background:#B91C1C"></div><span class="sw-name">--color-status-failed</span><span class="sw-hex">#B91C1C</span></div>
+<div class="sw"><div class="sw-color" style="background:#E8EEFB;box-shadow:inset 0 -4px 0 #2451B5"></div><span class="sw-name">--color-highlight</span><span class="sw-hex">#E8EEFB + souligné #2451B5</span></div>
+</div>
+</div>
+</section>
+
+<section class="inv">
+<div class="inv-head"><h2>Typographie</h2><p>IBM Plex Sans pour l'interface, IBM Plex Serif pour la synthèse exécutive (effet rapport imprimé), IBM Plex Mono pour le code et les glyphes. Chiffres tabulaires dans les tableaux.</p></div>
+<div class="inv-body" style="gap:0">
+<div class="type-row"><span class="type-meta">--text-2xl · 28px / 600 · titre de page</span><span style="font-size:28px;font-weight:600;line-height:1.2;letter-spacing:-.01em">Démo télécom</span></div>
+<div class="type-row"><span class="type-meta">--text-xl · 24px / 600 · titre de rapport</span><span style="font-family:var(--font-serif);font-size:24px;font-weight:600;line-height:1.25">Synthèse exécutive</span></div>
+<div class="type-row"><span class="type-meta">--text-lg · 20px / 600 · titre de section</span><span style="font-size:20px;font-weight:600">Thèmes</span></div>
+<div class="type-row"><span class="type-meta">--text-md · 16px / 600 · titre de carte</span><span style="font-size:16px;font-weight:600">Couverture et qualité réseau</span></div>
+<div class="type-row"><span class="type-meta">--text-base · 14px / 400 · corps</span><span style="font-size:14px">Le réseau coupe tout le temps à Pikine, surtout le soir après 20h.</span></div>
+<div class="type-row"><span class="type-meta">--text-base · 15px serif / 400 · corps de rapport</span><span style="font-family:var(--font-serif);font-size:15px;line-height:1.65">203 verbatims exploités sur 223 reçus (20 écartés : vides ou doublons).</span></div>
+<div class="type-row"><span class="type-meta">--text-sm · 13px / 400 · descriptions, citations</span><span style="font-size:13px;color:#3F4B5A">Disponibilité du réseau mobile, zones mal couvertes, pannes, qualité des appels.</span></div>
+<div class="type-row"><span class="type-meta">--text-xs · 12px / 600 · badges, en-têtes de tableau</span><span style="font-size:12px;font-weight:600;color:#5B6776;letter-spacing:.02em">VERBATIMS · STATUT · 1 – 10 SUR 223</span></div>
+<div class="type-row"><span class="type-meta">--font-mono · 12px · code, résumé de coût</span><span style="font-family:var(--font-mono);font-size:12px;color:#3F4B5A">17 698 tokens en entrée + 26 136 relus depuis le cache · 0,048 $</span></div>
+<div class="type-row" style="border-bottom:0"><span class="type-meta">--kpi · 32px / 600 · tabulaire</span><span style="font-size:32px;font-weight:600;font-variant-numeric:tabular-nums;letter-spacing:-.01em">203 · 0,048&nbsp;$ · 93&nbsp;s</span></div>
+</div>
+</section>
+
+<section class="inv">
+<div class="inv-head"><h2>Espacements</h2><p>Base 4 px. Les cartes utilisent 20–24 px de padding, les sections 40 px entre elles, la page 32 px de marge (16 px sous 768 px).</p></div>
+<div class="inv-body">
+<div style="display:flex;flex-wrap:wrap;gap:24px;align-items:flex-end">
+<div style="display:flex;flex-direction:column;gap:6px;align-items:flex-start"><div class="mark-bar" style="width:4px"></div><span class="sw-name">--space-1</span><span class="sw-hex">4px</span></div>
+<div style="display:flex;flex-direction:column;gap:6px;align-items:flex-start"><div class="mark-bar" style="width:8px"></div><span class="sw-name">--space-2</span><span class="sw-hex">8px</span></div>
+<div style="display:flex;flex-direction:column;gap:6px;align-items:flex-start"><div class="mark-bar" style="width:12px"></div><span class="sw-name">--space-3</span><span class="sw-hex">12px</span></div>
+<div style="display:flex;flex-direction:column;gap:6px;align-items:flex-start"><div class="mark-bar" style="width:16px"></div><span class="sw-name">--space-4</span><span class="sw-hex">16px</span></div>
+<div style="display:flex;flex-direction:column;gap:6px;align-items:flex-start"><div class="mark-bar" style="width:24px"></div><span class="sw-name">--space-5</span><span class="sw-hex">24px</span></div>
+<div style="display:flex;flex-direction:column;gap:6px;align-items:flex-start"><div class="mark-bar" style="width:32px"></div><span class="sw-name">--space-6</span><span class="sw-hex">32px</span></div>
+<div style="display:flex;flex-direction:column;gap:6px;align-items:flex-start"><div class="mark-bar" style="width:48px"></div><span class="sw-name">--space-7</span><span class="sw-hex">48px</span></div>
+<div style="display:flex;flex-direction:column;gap:6px;align-items:flex-start"><div class="mark-bar" style="width:64px"></div><span class="sw-name">--space-8</span><span class="sw-hex">64px</span></div>
+</div>
+</div>
+</section>
+
+<section class="inv">
+<div class="inv-head"><h2>Rayons et ombres</h2><p>Rayon 8 px pour tout ce qui se clique ou se saisit, 12 px pour les cartes, pilule pour les badges. Ombres discrètes : la bordure fait l'essentiel du travail.</p></div>
+<div class="inv-body">
+<div style="display:flex;flex-wrap:wrap;gap:24px">
+<div class="sw"><div style="width:72px;height:52px;border-radius:4px;background:#E8EEFB;border:1px solid #2451B5"></div><span class="sw-name">--radius-sm</span><span class="sw-hex">4px · surlignage</span></div>
+<div class="sw"><div style="width:72px;height:52px;border-radius:8px;background:#E8EEFB;border:1px solid #2451B5"></div><span class="sw-name">--radius-md</span><span class="sw-hex">8px · boutons, champs, chips</span></div>
+<div class="sw"><div style="width:72px;height:52px;border-radius:12px;background:#E8EEFB;border:1px solid #2451B5"></div><span class="sw-name">--radius-lg</span><span class="sw-hex">12px · cartes</span></div>
+<div class="sw"><div style="width:72px;height:52px;border-radius:999px;background:#E8EEFB;border:1px solid #2451B5"></div><span class="sw-name">--radius-pill</span><span class="sw-hex">999px · badges</span></div>
+</div>
+<div style="display:flex;flex-wrap:wrap;gap:24px">
+<div class="sw"><div style="width:140px;height:72px;border-radius:12px;background:#FFFFFF;border:1px solid #DCE2EA;box-shadow:0 1px 2px rgba(22,32,42,.06)"></div><span class="sw-name">--shadow-sm</span><span class="sw-hex">cartes au repos</span></div>
+<div class="sw"><div style="width:140px;height:72px;border-radius:12px;background:#FFFFFF;border:1px solid #DCE2EA;box-shadow:0 2px 8px rgba(22,32,42,.08)"></div><span class="sw-name">--shadow-md</span><span class="sw-hex">cartes survolées, menus</span></div>
+<div class="sw"><div style="width:140px;height:72px;border-radius:12px;background:#FFFFFF;border:1px solid #DCE2EA;box-shadow:0 8px 24px rgba(22,32,42,.12)"></div><span class="sw-name">--shadow-lg</span><span class="sw-hex">boîtes de dialogue</span></div>
+</div>
+</div>
+</section>
+
+<section class="inv" style="flex-direction:column">
+<div style="display:flex;flex-direction:column;gap:6px"><h2 style="font-size:16px;font-weight:600">Fichier de variables CSS</h2><p style="font-size:12px;color:#5B6776;line-height:1.5">À copier dans <code>src/styles.scss</code> (ou <code>_tokens.scss</code>). Les composants Angular Material reprennent ces valeurs via leurs tokens de thème (ex. <code>--mdc-filled-button-container-shape: var(--radius-md)</code>) ; Chart.js reçoit les couleurs de sentiment dans <code>backgroundColor</code>, dans l'ordre Positif, Mixte, Neutre, Négatif, avec <code>borderColor: #FFFFFF</code> et <code>borderWidth: 2</code> pour l'espace entre segments.</p></div>
+<pre class="pre">/* Analyseur de verbatims — variables de design */
+:root {
+  /* Couleurs d'interface */
+  --color-primary: #2451B5;          /* actions principales, liens, sélection */
+  --color-primary-strong: #1B3F8F;   /* survol et état actif */
+  --color-primary-soft: #E8EEFB;     /* fonds de sélection, chips actives */
+  --color-primary-ink: #17347A;      /* texte sur fond primary-soft */
+  --color-ink: #16202A;              /* texte principal */
+  --color-ink-secondary: #3F4B5A;    /* texte secondaire */
+  --color-ink-muted: #5B6776;        /* libellés, aides (4,5:1 sur blanc) */
+  --color-ink-disabled: #8A94A1;
+  --color-background: #F3F5F8;       /* fond de page */
+  --color-surface: #FFFFFF;          /* cartes, tableaux, champs */
+  --color-surface-alt: #F8FAFC;      /* en-têtes de tableau, zone de dépôt */
+  --color-border: #DCE2EA;
+  --color-border-strong: #AEB8C4;    /* contours des champs et boutons */
+  --color-focus: #2451B5;
+
+  /* Sentiments : base (graphiques), soft (fond de badge), ink (texte) */
+  --color-positive: #166534;  --color-positive-soft: #DCFCE7;  --color-positive-ink: #14532D;
+  --color-neutral:  #6B7280;  --color-neutral-soft:  #E5E7EB;  --color-neutral-ink:  #374151;
+  --color-negative: #B91C1C;  --color-negative-soft: #FEE2E2;  --color-negative-ink: #7F1D1D;
+  --color-mixed:    #D97706;  --color-mixed-soft:    #FEF3C7;  --color-mixed-ink:    #78350F;
+  --color-discarded: #9AA3AE; --color-discarded-soft: #F1F3F6;
+
+  /* Statuts d'analyse */
+  --color-status-pending: #6B7280;
+  --color-status-running: #2451B5;
+  --color-status-done: #166534;
+  --color-status-failed: #B91C1C;
+
+  /* Surlignage de la phrase clé */
+  --color-highlight: #E8EEFB;
+  --color-highlight-underline: #2451B5;
+
+  /* Typographie */
+  --font-sans: "IBM Plex Sans", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-serif: "IBM Plex Serif", Georgia, "Times New Roman", serif;  /* synthèse */
+  --font-mono: "IBM Plex Mono", Consolas, "Courier New", monospace;   /* code, glyphes */
+  --text-xs: 12px;  --text-sm: 13px;  --text-base: 14px;  --text-md: 16px;
+  --text-lg: 20px;  --text-xl: 24px;  --text-2xl: 28px;   --text-kpi: 32px;
+  --leading-tight: 1.25;  --leading-normal: 1.5;  --leading-relaxed: 1.65;
+  --weight-regular: 400;  --weight-medium: 500;   --weight-semibold: 600;
+
+  /* Espacements (base 4 px) */
+  --space-1: 4px;   --space-2: 8px;   --space-3: 12px;  --space-4: 16px;
+  --space-5: 24px;  --space-6: 32px;  --space-7: 48px;  --space-8: 64px;
+
+  /* Rayons */
+  --radius-sm: 4px;      /* surlignage, barres fines */
+  --radius-md: 8px;      /* boutons, champs, chips */
+  --radius-lg: 12px;     /* cartes, zone de dépôt */
+  --radius-pill: 999px;  /* badges */
+
+  /* Ombres */
+  --shadow-sm: 0 1px 2px rgba(22, 32, 42, 0.06);
+  --shadow-md: 0 2px 8px rgba(22, 32, 42, 0.08);
+  --shadow-lg: 0 8px 24px rgba(22, 32, 42, 0.12);
+
+  /* Dimensions */
+  --control-height: 40px;      /* boutons, selects, chips de filtre */
+  --field-height: 56px;        /* mat-form-field outline */
+  --toolbar-height: 56px;
+  --content-max-width: 1200px;
+  --chart-bar-height: 10px;
+}</pre>
+</section>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":3100}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

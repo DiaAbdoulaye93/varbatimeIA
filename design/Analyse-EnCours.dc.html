@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Détail d'une analyse — en cours</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{--font-sans:"IBM Plex Sans","Segoe UI",Roboto,Helvetica,Arial,sans-serif;--font-serif:"IBM Plex Serif",Georgia,"Times New Roman",serif;--font-mono:"IBM Plex Mono",Consolas,"Courier New",monospace;--color-primary:#2451B5;--color-primary-strong:#1B3F8F;--color-primary-soft:#E8EEFB;--color-primary-ink:#17347A;--color-ink:#16202A;--color-ink-secondary:#3F4B5A;--color-ink-muted:#5B6776;--color-ink-disabled:#8A94A1;--color-background:#F3F5F8;--color-surface:#FFFFFF;--color-surface-alt:#F8FAFC;--color-border:#DCE2EA;--color-border-strong:#AEB8C4;--color-positive:#166534;--color-positive-soft:#DCFCE7;--color-positive-ink:#14532D;--color-neutral:#6B7280;--color-neutral-soft:#E5E7EB;--color-neutral-ink:#374151;--color-negative:#B91C1C;--color-negative-soft:#FEE2E2;--color-negative-ink:#7F1D1D;--color-mixed:#D97706;--color-mixed-soft:#FEF3C7;--color-mixed-ink:#78350F;--color-discarded:#9AA3AE;--color-discarded-soft:#F1F3F6;--color-highlight:#E8EEFB}
+*{box-sizing:border-box}
+body{margin:0;font-family:var(--font-sans);font-size:14px;line-height:1.5;color:#16202A;background:#F3F5F8;-webkit-font-smoothing:antialiased}
+a{color:#2451B5}a:hover{color:#1B3F8F}
+h1,h2,h3,h4,p,ul,ol{margin:0}
+:focus-visible{outline:2px solid #2451B5;outline-offset:2px}
+.page{width:100%;max-width:1200px;margin:0 auto;padding:32px 32px 56px}
+@media (max-width:768px){.page{padding:16px 16px 40px}.topbar{padding:0 16px}.stepper{flex-direction:column;gap:16px}.step-line{display:none}}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:40px;padding:0 20px;border-radius:8px;font-family:var(--font-sans);font-size:14px;font-weight:500;line-height:1;text-decoration:none;cursor:pointer;border:1px solid transparent;white-space:nowrap}
+.btn svg{width:18px;height:18px;flex:none}
+.btn-primary{background:#2451B5;color:#FFFFFF}.btn-primary:hover{background:#1B3F8F;color:#FFFFFF}
+.btn-stroked{background:#FFFFFF;color:#2451B5;border-color:#AEB8C4}.btn-stroked:hover{background:#E8EEFB;color:#1B3F8F}
+.btn-text{background:transparent;color:#2451B5;padding:0 12px}.btn-text:hover{background:#E8EEFB;color:#1B3F8F}
+.card{background:#FFFFFF;border:1px solid #DCE2EA;border-radius:12px;box-shadow:0 1px 2px rgba(22,32,42,.06)}
+.status{display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 10px 0 8px;border-radius:999px;font-size:12px;font-weight:600;line-height:1;border:1px solid;white-space:nowrap}
+.status svg{width:14px;height:14px;flex:none}
+.st-running{color:#17347A;border-color:#2451B5;background:#E8EEFB}
+.num{font-variant-numeric:tabular-nums}
+.progress{height:8px;border-radius:4px;background:#DCE2EA;overflow:hidden;position:relative}
+.progress-fill{height:100%;background:#2451B5;border-radius:4px}
+.step-dot{width:28px;height:28px;border-radius:999px;display:inline-flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;flex:none;background:#E5E7EB;color:#5B6776}
+.step-dot svg{width:16px;height:16px}
+.step-done{background:#2451B5;color:#FFFFFF}
+.step-active{background:#2451B5;color:#FFFFFF;box-shadow:0 0 0 4px #E8EEFB}
+.step-label{font-size:14px;font-weight:600;color:#16202A;line-height:1.3}
+.step-sub{font-size:12px;color:#5B6776;line-height:1.3}
+.step-upcoming .step-label{color:#5B6776;font-weight:500}
+.step-line{flex:1;height:2px;background:#DCE2EA;margin:0 12px;min-width:16px}
+.step-line-done{background:#2451B5}
+@keyframes spin{to{transform:rotate(360deg)}}
+.spin{animation:spin 1s linear infinite;transform-origin:center}
+</style>
+</helmet>
+<div style="min-height:100vh;display:flex;flex-direction:column;background:#F3F5F8">
+<header class="topbar" style="height:56px;background:#FFFFFF;border-bottom:1px solid #DCE2EA;display:flex;align-items:center;padding:0 32px;gap:16px;flex:none">
+<a href="Main.dc.html" style="display:flex;align-items:center;gap:10px;text-decoration:none;color:#16202A">
+<span style="width:28px;height:28px;border-radius:8px;background:#2451B5;color:#FFFFFF;display:inline-flex;align-items:center;justify-content:center;flex:none"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v11H9l-4 3v-3H4z"></path><path d="M8 9h8M8 12.5h5"></path></svg></span>
+<span style="font-size:16px;font-weight:600;letter-spacing:-.01em">Analyseur de verbatims</span>
+</a>
+</header>
+<main class="page" style="display:flex;flex-direction:column;gap:24px">
+<nav aria-label="Fil d'Ariane" style="display:flex;align-items:center;gap:8px;font-size:13px;color:#5B6776"><a href="Main.dc.html" style="color:#2451B5;text-decoration:none">Analyses</a><span aria-hidden="true">/</span><span style="color:#16202A;font-weight:500">Post-achat agence Dakar</span></nav>
+<div style="display:flex;flex-direction:column;gap:8px">
+<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+<h1 style="font-size:28px;font-weight:600;line-height:1.2;letter-spacing:-.01em">Post-achat agence Dakar</h1>
+<span class="status st-running"><svg class="spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.6-6.4"></path></svg>En cours · 42&nbsp;%</span>
+</div>
+<p style="font-size:15px;color:#3F4B5A">Enquête post-achat, agence bancaire, Dakar, septembre 2026</p>
+<p style="font-size:13px;color:#5B6776" class="num">Lancée le 21 oct. 2026 à 10:41 · 196 verbatims reçus · fichier post_achat_agence_dakar.csv</p>
+</div>
+<section class="card" style="padding:32px;display:flex;flex-direction:column;gap:28px">
+<div style="display:flex;flex-direction:column;gap:10px">
+<div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px">
+<h2 style="font-size:16px;font-weight:600">Analyse en cours</h2>
+<span class="num" style="font-size:20px;font-weight:600;color:#17347A">42&nbsp;%</span>
+</div>
+<div class="progress" role="progressbar" aria-valuenow="42" aria-valuemin="0" aria-valuemax="100" aria-label="Avancement de l'analyse"><div class="progress-fill" style="width:42%"></div></div>
+<p style="font-size:13px;color:#5B6776">Étape 2 sur 4 · Extraction du sentiment et des thèmes, lot 4 sur 9</p>
+</div>
+<ol class="stepper" style="display:flex;align-items:flex-start;list-style:none;margin:0;padding:0">
+<li style="flex:1;display:flex;align-items:center;gap:12px;min-width:0">
+<span class="step-dot step-done" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"></path></svg></span>
+<span style="display:flex;flex-direction:column;min-width:0"><span class="step-label">Prétraitement</span><span class="step-sub">Terminé · 196 lus, 14 écartés</span></span>
+<span class="step-line step-line-done" aria-hidden="true"></span>
+</li>
+<li style="flex:1;display:flex;align-items:center;gap:12px;min-width:0" aria-current="step">
+<span class="step-dot step-active" aria-hidden="true">2</span>
+<span style="display:flex;flex-direction:column;min-width:0"><span class="step-label">Extraction</span><span class="step-sub">En cours · sentiment et thèmes</span></span>
+<span class="step-line" aria-hidden="true"></span>
+</li>
+<li class="step-upcoming" style="flex:1;display:flex;align-items:center;gap:12px;min-width:0">
+<span class="step-dot" aria-hidden="true">3</span>
+<span style="display:flex;flex-direction:column;min-width:0"><span class="step-label">Regroupement des thèmes</span><span class="step-sub">À venir</span></span>
+<span class="step-line" aria-hidden="true"></span>
+</li>
+<li class="step-upcoming" style="flex:0 1 auto;display:flex;align-items:center;gap:12px;min-width:0">
+<span class="step-dot" aria-hidden="true">4</span>
+<span style="display:flex;flex-direction:column;min-width:0"><span class="step-label">Synthèse</span><span class="step-sub">À venir</span></span>
+</li>
+</ol>
+<div style="display:flex;gap:12px;align-items:flex-start;background:#F8FAFC;border:1px solid #DCE2EA;border-radius:8px;padding:14px 16px">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2451B5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;margin-top:1px"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg>
+<div style="display:flex;flex-direction:column;gap:2px">
+<p style="font-weight:600;font-size:14px">Environ 1 à 2 minutes pour 200 verbatims</p>
+<p style="font-size:13px;color:#5B6776" class="num">Démarrée à 10:41 · 38 s écoulées · vous pouvez quitter cette page, l'analyse continue et les résultats s'afficheront ici.</p>
+</div>
+</div>
+</section>
+<div>
+<a class="btn btn-text" href="Main.dc.html" style="margin-left:-12px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5m0 0 6-6m-6 6 6 6"></path></svg>Retour à la liste</a>
+</div>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":760}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

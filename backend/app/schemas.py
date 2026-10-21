@@ -95,6 +95,16 @@ RECORD_THEME_MAPPING = ToolSpec(
 
 # --- Pipeline results (CLI output, API responses) ---
 
+
+class ProgressInfo(BaseModel):
+    """Details shown while an analysis runs ("lot 4 sur 9", "196 lus, 14 écartés")."""
+
+    n_kept: int | None = None
+    n_skipped: int | None = None
+    batch_done: int | None = None
+    batch_total: int | None = None
+
+
 SentimentCounts = dict[Sentiment, int]
 
 
@@ -171,6 +181,7 @@ class AnalysisCreated(BaseModel):
 class AnalysisSummary(BaseModel):
     id: str
     name: str
+    context: str
     status: AnalysisStatus
     progress: int
     created_at: datetime
@@ -178,8 +189,9 @@ class AnalysisSummary(BaseModel):
 
 
 class AnalysisDetail(AnalysisSummary):
-    context: str
-    current_step: str
+    source_filename: str | None
+    current_step: str  # on failure: the step that failed
+    progress_info: ProgressInfo | None
     error: str | None
     stats: AnalysisStats | None
     synthesis_md: str | None
@@ -237,6 +249,7 @@ class UsageOut(BaseModel):
     steps: list[StepUsage]
     total: StepUsage
     analysis_duration_ms: int | None
+    usd_to_xof: float  # indicative conversion rate shown next to USD costs
 
 
 # --- Dataset generation (scripts/generate_dataset.py) ---

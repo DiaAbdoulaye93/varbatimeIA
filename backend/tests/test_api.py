@@ -80,12 +80,19 @@ def test_create_runs_the_pipeline_in_background(api: TestClient) -> None:
     assert detail["status"] == "done", detail
     assert (detail["progress"], detail["current_step"]) == (100, "done")
     assert detail["name"] == "enquete_test"
+    assert detail["source_filename"] == "enquete_test.csv"
+    assert detail["progress_info"] == {
+        "n_kept": 6,
+        "n_skipped": 2,
+        "batch_done": 1,
+        "batch_total": 1,
+    }
     assert detail["total_verbatims"] == 8
     assert detail["stats"]["n_used"] == 6 and detail["stats"]["n_skipped"] == 2
     assert detail["synthesis_md"].startswith("## Chiffres clés")
 
     listed = api.get("/api/analyses").json()
-    assert [a["id"] for a in listed] == [created["id"]]
+    assert [(a["id"], a["context"]) for a in listed] == [(created["id"], CONTEXT)]
 
 
 def test_identical_upload_reuses_the_analysis(api: TestClient, factory: FakeFactory) -> None:
@@ -134,6 +141,7 @@ def test_usage_endpoint(api: TestClient) -> None:
     assert usage["total"]["calls"] == 3
     assert usage["total"]["input_tokens"] == 300
     assert usage["total"]["cost_usd"] is not None
+    assert usage["usd_to_xof"] == Settings().usd_to_xof
 
 
 def test_failed_analysis_keeps_its_error_and_usage(db: Engine) -> None:
@@ -145,6 +153,7 @@ def test_failed_analysis_keeps_its_error_and_usage(db: Engine) -> None:
         analysis_id = post(api)["id"]
         detail = api.get(f"/api/analyses/{analysis_id}").json()
         assert detail["status"] == "failed"
+        assert detail["current_step"] == "cluster", "the failed step is kept"
         assert "refused" in detail["error"]
         assert api.get(f"/api/analyses/{analysis_id}/usage").json()["total"]["calls"] == 2
         # A failed analysis is not reused: a new upload runs again.

@@ -219,9 +219,19 @@ def test_run_pipeline_end_to_end() -> None:
         texts=[load_text_fixture("synthesis.md")],
     )
     steps: list[tuple[str, int]] = []
-    result = run_pipeline(
-        client, SETTINGS, TEXTS, CONTEXT, on_progress=lambda s, p: steps.append((s, p))
-    )
+    infos: list[Any] = []
+
+    def on_progress(step: str, progress: int, info: Any) -> None:
+        steps.append((step, progress))
+        infos.append(info)
+
+    result = run_pipeline(client, SETTINGS, TEXTS, CONTEXT, on_progress=on_progress)
+    assert infos[-1].model_dump() == {
+        "n_kept": 6,
+        "n_skipped": 2,
+        "batch_done": 1,
+        "batch_total": 1,
+    }
 
     assert result.stats.model_dump() == {
         "n_received": 8,

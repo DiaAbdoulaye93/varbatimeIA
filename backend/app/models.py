@@ -24,9 +24,11 @@ class Analysis(SQLModel, table=True):
     id: str = Field(default_factory=lambda: str(uuid4()), primary_key=True)
     name: str
     context: str = Field(sa_type=Text)
+    source_filename: str | None = None
     status: str = Field(default=STATUS_PENDING, index=True)
     progress: int = 0
-    current_step: str = "preprocess"
+    current_step: str = "preprocess"  # kept on failure: the step that failed
+    progress_info: dict[str, Any] | None = Field(default=None, sa_type=JSON)
     error: str | None = Field(default=None, sa_type=Text)
     content_hash: str = Field(index=True)
     total_verbatims: int = 0
