@@ -66,10 +66,11 @@ uv run python scripts/run_pipeline_cli.py ../data/samples/telecom_satisfaction_2
 # frontend
 cd frontend && npm ci && npm start
 
-# full stack
-docker compose up --build
+# backend dans Docker (dev, PostgreSQL de l'hôte)
+POSTGRES_PASSWORD=... docker compose up
 ```
 
 ## Journal
 <!-- Une ligne par session : date — fait / bloque -->
 - 2026-10-21 — Plan rédigé (IMPLEMENTATION.md, CLAUDE.md). Rien d'implémenté.
+- 2026-10-21 — Outillage Claude Code, passage à PostgreSQL, adaptation aux contraintes des modèles 5.5 (pas de `temperature`, pas de `tool_choice` forcé sur Sonnet). Session 1 terminée : dataset (223 lignes, 0,16 $), pipeline complet en CLI (11 appels, 0,047 $, 78 s, 95 % d'accord sentiment avec le gold, 20/20 bruits écartés). Session 2 : API, persistance, cache, tests (61 verts), vérifiée au `curl`. Bloquant : `docker-compose.yml` écrit et validé (`docker compose config`) mais pas lancé, Docker Desktop arrêté ; `topic_mapping.json` à écrire à la main pour la couverture des sujets.

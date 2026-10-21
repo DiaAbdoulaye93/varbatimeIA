@@ -301,10 +301,10 @@ Deux workflows séparés pour que la CI reste rapide et que le déploiement ne s
 - **Fini quand** : le CLI tourne de bout en bout sur le CSV de démo, le JSON contient sentiment + thèmes par verbatim, 6-10 thèmes canoniques et une synthèse lisible, et le coût est affiché.
 
 ### Session 2 (2-3h) — API FastAPI + persistance + async
-- [ ] `models.py`, `db.py`, `analysis_service.py` (met à jour `progress`/`current_step` à chaque lot).
-- [ ] Routes §4. `POST` renvoie 202 et lance `BackgroundTasks`.
-- [ ] Cache par `content_hash` (§2.6).
-- [ ] `test_api.py` avec pipeline mocké.
+- [x] `models.py`, `db.py`, `analysis_service.py` (met à jour `progress`/`current_step` à chaque lot).
+- [x] Routes §4. `POST` renvoie 202 et lance `BackgroundTasks`.
+- [x] Cache par `content_hash` (§2.6).
+- [x] `test_api.py` avec pipeline mocké.
 - [ ] `docker-compose.yml` pour le dev.
 - **Fini quand** : `curl -F file=@data/samples/... -F context=... localhost:8000/api/analyses` → 202, puis le `GET` passe de `processing` à `done` avec les résultats ; `pytest` vert.
 
