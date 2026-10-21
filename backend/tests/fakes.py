@@ -1,6 +1,7 @@
 """Test doubles: no test ever reaches the Claude API."""
 
 import json
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
@@ -12,9 +13,17 @@ from app.schemas import ToolSpec
 
 FIXTURES_DIR = Path(__file__).resolve().parent / "fixtures"
 
+# A canned tool input, or a function building it from the user message.
+# A function may raise LlmError to simulate a failed call.
+Payload = dict[str, Any] | Callable[[str], dict[str, Any]]
+
 
 def load_fixture(name: str) -> Any:
     return json.loads((FIXTURES_DIR / name).read_text(encoding="utf-8"))
+
+
+def load_text_fixture(name: str) -> str:
+    return (FIXTURES_DIR / name).read_text(encoding="utf-8")
 
 
 class FakeLlmClient:
@@ -25,7 +34,7 @@ class FakeLlmClient:
 
     def __init__(
         self,
-        tool_payloads: dict[str, list[dict[str, Any]]] | None = None,
+        tool_payloads: dict[str, list[Payload]] | None = None,
         texts: list[str] | None = None,
     ) -> None:
         self._tool_payloads = tool_payloads or {}
@@ -48,6 +57,8 @@ class FakeLlmClient:
         queue = self._tool_payloads[tool.name]
         payload = queue.pop(0) if len(queue) > 1 else queue[0]
         self._record(step, model, user)
+        if callable(payload):
+            payload = payload(user)
         return tool.input_model.model_validate(payload)
 
     def call_text(

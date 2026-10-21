@@ -45,6 +45,112 @@ class PreprocessedVerbatim(BaseModel):
     truncated: bool = False
 
 
+# --- Extraction tool (app/pipeline/extract.py) ---
+# Bounds such as "1 to 3 themes" are enforced in extract.py rather than in the schema, so
+# that one off-spec item does not invalidate a whole batch of 25.
+
+
+class ExtractionItem(StrictModel):
+    idx: int
+    sentiment: Sentiment
+    themes: list[str] = Field(description="1 to 3 short lowercase French labels")
+    key_phrase: str | None = Field(
+        default=None, description="Optional verbatim excerpt, 8 words max, copied as is"
+    )
+
+
+class ExtractionBatch(StrictModel):
+    results: list[ExtractionItem]
+
+
+RECORD_EXTRACTION = ToolSpec(
+    name="record_extraction",
+    description="Record sentiment and themes for every verbatim in the batch.",
+    input_model=ExtractionBatch,
+)
+
+
+# --- Theme clustering tool (app/pipeline/cluster.py) ---
+
+
+class CanonicalTheme(StrictModel):
+    label: str
+    description: str
+    raw_labels: list[str] = Field(description="Raw labels copied exactly as received")
+
+
+class ThemeMapping(StrictModel):
+    themes: list[CanonicalTheme] = Field(description="6 to 10 canonical themes")
+
+
+RECORD_THEME_MAPPING = ToolSpec(
+    name="record_theme_mapping",
+    description=(
+        "Record the final coding grid: canonical themes and the raw labels each one absorbs."
+    ),
+    input_model=ThemeMapping,
+)
+
+
+# --- Pipeline results (CLI output, API responses) ---
+
+SentimentCounts = dict[Sentiment, int]
+
+
+def empty_sentiment_counts() -> SentimentCounts:
+    return {"positive": 0, "neutral": 0, "negative": 0, "mixed": 0}
+
+
+class VerbatimResult(BaseModel):
+    idx: int
+    text: str
+    text_norm: str
+    skipped_reason: str | None = None  # empty | duplicate_of:<idx> | extraction_failed
+    sentiment: Sentiment | None = None
+    themes_raw: list[str] = []
+    key_phrase: str | None = None
+    theme_ids: list[int] = []
+
+
+class ThemeResult(BaseModel):
+    id: int  # 1-based rank, by decreasing count
+    label: str
+    description: str
+    raw_labels: list[str]
+    count: int  # verbatims mentioning the theme
+    sentiment_breakdown: SentimentCounts
+    representative_idx: list[int]
+
+
+class AnalysisStats(BaseModel):
+    n_received: int
+    n_used: int  # verbatims with an extraction result
+    n_skipped: int  # empty or duplicate, never sent to the LLM
+    n_failed: int  # sent but no valid extraction result
+    sentiment_counts: SentimentCounts
+
+
+class UsageRecord(BaseModel):
+    step: str
+    model: str
+    input_tokens: int
+    cache_creation_tokens: int
+    cache_read_tokens: int
+    output_tokens: int
+    duration_ms: int
+    cost_usd: float | None
+
+
+class PipelineResult(BaseModel):
+    context: str
+    stats: AnalysisStats
+    themes: list[ThemeResult]
+    verbatims: list[VerbatimResult]
+    synthesis_md: str
+    usage: list[UsageRecord]
+    duration_ms: int
+
+
 # --- Dataset generation (scripts/generate_dataset.py) ---
 
 
