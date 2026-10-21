@@ -47,6 +47,8 @@ def format_python(path: Path) -> int:
         )
         return 1
     cwd = BACKEND_DIR if BACKEND_DIR.exists() else PROJECT_DIR
+    # Format first so that line-length issues the formatter can fix are not reported.
+    run([*ruff, "format", str(path)], cwd)
     check = run([*ruff, "check", "--fix", str(path)], cwd)
     run([*ruff, "format", str(path)], cwd)
     if check.returncode != 0:
