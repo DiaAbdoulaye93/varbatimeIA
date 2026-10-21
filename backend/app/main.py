@@ -4,6 +4,7 @@ import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from importlib.metadata import version
+from pathlib import Path
 
 from fastapi import FastAPI
 from sqlalchemy import Engine
@@ -14,14 +15,17 @@ from app.db import get_engine, init_db
 from app.pipeline.llm_client import AnthropicLlmClient
 from app.schemas import HealthOut
 from app.services.analysis_service import LlmClientFactory, fail_interrupted
+from app.spa import INDEX, mount_spa
 
 APP_VERSION = version("sat-verbatim-analyzer")
 
 
 def create_app(
-    engine: Engine | None = None, llm_client_factory: LlmClientFactory | None = None
+    engine: Engine | None = None,
+    llm_client_factory: LlmClientFactory | None = None,
+    static_dir: Path | None = None,
 ) -> FastAPI:
-    """Build the app; tests pass their own engine and a fake LLM client factory."""
+    """Build the app; tests pass their own engine, a fake LLM client and a static folder."""
     settings = get_settings()
     logging.basicConfig(level=settings.log_level, format="%(levelname)s %(name)s: %(message)s")
 
@@ -40,6 +44,10 @@ def create_app(
     def health() -> HealthOut:
         return HealthOut(version=APP_VERSION)
 
+    # Registered last: its catch-all route must not shadow the API routes.
+    spa_dir = static_dir or settings.static_dir
+    if (spa_dir / INDEX).is_file():
+        mount_spa(app, spa_dir)
     return app
 
 
