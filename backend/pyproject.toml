@@ -19,8 +19,13 @@ dev = [
     "ruff>=0.17.1",
 ]
 
-[tool.uv]
-package = false
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+# Installed in editable mode by `uv sync` so scripts/ and tests/ can import `app`.
+[tool.hatch.build.targets.wheel]
+packages = ["app"]
 
 [tool.ruff]
 target-version = "py312"
@@ -31,3 +36,4 @@ select = ["E", "F", "I", "UP", "B", "SIM"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pythonpath = ["."]
