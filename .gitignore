@@ -1,0 +1,39 @@
+# Secrets - never commit
+.env
+.env.*
+!.env.example
+*.kubeconfig
+kubeconfig
+secret.yaml
+
+# Pipeline outputs
+out/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+*.egg-info/
+
+# SQLite
+*.db
+*.sqlite
+*.sqlite3
+
+# Node / Angular
+node_modules/
+dist/
+.angular/
+backend/static/
+
+# Claude Code local overrides
+.claude/settings.local.json
+
+# OS / editors
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
