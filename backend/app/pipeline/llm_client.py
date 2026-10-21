@@ -60,12 +60,12 @@ class LlmUsage:
         price = pricing.get(self.model)
         if price is None:
             return None
-        return (
-            self.input_tokens * price.input
-            + self.cache_creation_tokens * price.cache_write_5m
-            + self.cache_read_tokens * price.cache_read
-            + self.output_tokens * price.output
-        ) / 1_000_000
+        return price.cost(
+            self.input_tokens,
+            self.cache_creation_tokens,
+            self.cache_read_tokens,
+            self.output_tokens,
+        )
 
 
 class LlmClient(Protocol):

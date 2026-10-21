@@ -55,6 +55,17 @@ class ModelPricing:
     cache_read: float
     output: float
 
+    def cost(
+        self, input_tokens: int, cache_write_tokens: int, cache_read_tokens: int, output_tokens: int
+    ) -> float:
+        """USD cost of one call."""
+        return (
+            input_tokens * self.input
+            + cache_write_tokens * self.cache_write_5m
+            + cache_read_tokens * self.cache_read
+            + output_tokens * self.output
+        ) / 1_000_000
+
 
 # Source: https://platform.claude.com/docs/en/about-claude/pricing (checked 2026-10-21).
 # Haiku 5.5 rates are for prompts up to 100,000 tokens; our prompts stay far below that.
