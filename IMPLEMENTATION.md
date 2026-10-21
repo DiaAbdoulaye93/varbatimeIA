@@ -294,7 +294,7 @@ Deux workflows séparés pour que la CI reste rapide et que le déploiement ne s
 ### Session 1 (2-3h) — Données + pipeline en CLI
 - [x] Init repo, `pyproject.toml`, `CLAUDE.md`, `.env.example`, `.gitignore`.
 - [x] `scripts/generate_dataset.py` : appelle Claude pour produire 200 verbatims télécom/mobile money avec le bruit décrit en §0 (distribution visée : ~35 % négatif, 30 % positif, 20 % neutre, 15 % mixte/bruit). Résultat commité dans `data/samples/`.
-- [ ] `preprocess.py` + tests unitaires.
+- [x] `preprocess.py` + tests unitaires.
 - [ ] `llm_client.py` (wrapper SDK, usage logging, retries).
 - [ ] `extract.py`, `cluster.py`, `synthesize.py` + prompts.
 - [ ] `run_pipeline_cli.py data/samples/telecom_satisfaction_200.csv` → écrit `out/result.json` + affiche le récap tokens.

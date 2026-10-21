@@ -34,6 +34,17 @@ class ToolSpec[T: BaseModel]:
     input_model: type[T]
 
 
+# --- Preprocessing (app/pipeline/preprocess.py) ---
+
+
+class PreprocessedVerbatim(BaseModel):
+    idx: int  # 1-based position of the row in the CSV
+    text: str  # raw text as received
+    text_norm: str  # normalized (and possibly truncated) text sent to the LLM
+    skipped_reason: str | None = None  # "empty" | "duplicate_of:<idx>" | None
+    truncated: bool = False
+
+
 # --- Dataset generation (scripts/generate_dataset.py) ---
 
 
