@@ -24,9 +24,16 @@ def run(cmd: list[str], cwd: Path) -> subprocess.CompletedProcess[str]:
     return subprocess.run(cmd, cwd=cwd, capture_output=True, text=True)
 
 
+def find_uv() -> str | None:
+    # The standalone installer puts uv in ~/.local/bin, which may not be on PATH yet.
+    fallback = Path.home() / ".local" / "bin" / ("uv.exe" if sys.platform == "win32" else "uv")
+    return shutil.which("uv") or (str(fallback) if fallback.exists() else None)
+
+
 def ruff_cmd() -> list[str] | None:
-    if shutil.which("uv") and (BACKEND_DIR / "pyproject.toml").exists():
-        return ["uv", "run", "--project", str(BACKEND_DIR), "ruff"]
+    uv = find_uv()
+    if uv and (BACKEND_DIR / "pyproject.toml").exists():
+        return [uv, "run", "--project", str(BACKEND_DIR), "ruff"]
     if shutil.which("ruff"):
         return ["ruff"]
     return None
@@ -35,7 +42,9 @@ def ruff_cmd() -> list[str] | None:
 def format_python(path: Path) -> int:
     ruff = ruff_cmd()
     if ruff is None:
-        print(f"[hook] ruff not found, {path.name} was NOT formatted (install uv).", file=sys.stderr)
+        print(
+            f"[hook] ruff not found, {path.name} was NOT formatted (install uv).", file=sys.stderr
+        )
         return 1
     cwd = BACKEND_DIR if BACKEND_DIR.exists() else PROJECT_DIR
     check = run([*ruff, "check", "--fix", str(path)], cwd)
@@ -50,7 +59,10 @@ def format_python(path: Path) -> int:
 def format_typescript(path: Path) -> int:
     npx = shutil.which("npx")
     if npx is None or not (FRONTEND_DIR / "node_modules" / ".bin").exists():
-        print(f"[hook] prettier unavailable (frontend not installed), {path.name} NOT formatted.", file=sys.stderr)
+        print(
+            f"[hook] prettier unavailable (frontend not installed), {path.name} NOT formatted.",
+            file=sys.stderr,
+        )
         return 1
     result = run([npx, "--no-install", "prettier", "--write", str(path)], FRONTEND_DIR)
     if result.returncode != 0:

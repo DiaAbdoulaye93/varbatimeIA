@@ -292,7 +292,7 @@ Deux workflows séparés pour que la CI reste rapide et que le déploiement ne s
 ## 7. Plan par session — avec définition de « fini »
 
 ### Session 1 (2-3h) — Données + pipeline en CLI
-- [ ] Init repo, `pyproject.toml`, `CLAUDE.md`, `.env.example`, `.gitignore`.
+- [x] Init repo, `pyproject.toml`, `CLAUDE.md`, `.env.example`, `.gitignore`.
 - [ ] `scripts/generate_dataset.py` : appelle Claude pour produire 200 verbatims télécom/mobile money avec le bruit décrit en §0 (distribution visée : ~35 % négatif, 30 % positif, 20 % neutre, 15 % mixte/bruit). Résultat commité dans `data/samples/`.
 - [ ] `preprocess.py` + tests unitaires.
 - [ ] `llm_client.py` (wrapper SDK, usage logging, retries).
