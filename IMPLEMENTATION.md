@@ -309,13 +309,21 @@ Deux workflows séparés pour que la CI reste rapide et que le déploiement ne s
 - **Fini quand** : `curl -F file=@data/samples/... -F context=... localhost:8000/api/analyses` → 202, puis le `GET` passe de `processing` à `done` avec les résultats ; `pytest` vert.
 
 ### Session 3 (2-3h) — Dashboard Angular
-- [ ] `ng new frontend --standalone --routing --style=scss`, proxy vers le backend en dev.
-- [ ] `api.service.ts` typé sur les schémas §4, service de polling (`timer` + `switchMap` + `takeWhile`).
-- [ ] Page **liste** : analyses + bouton « Nouvelle analyse ».
-- [ ] Page **nouvelle analyse** : upload CSV, champ contexte, redirection vers le détail.
-- [ ] Page **détail** : barre de progression + étape courante ; puis 4 blocs : KPIs (total, filtrés, répartition sentiments en donut), thèmes (cards ou barres horizontales triées, avec mini-répartition sentiments et verbatims représentatifs), table verbatims paginée + filtres sentiment/thème, synthèse exécutive (Markdown rendu) et panneau coût/tokens.
-- [ ] Graphiques : `ng2-charts` (Chart.js). Pas de lib UI lourde ; Angular Material acceptable si ça fait gagner du temps sur la table et les chips.
+- [x] `ng new frontend --standalone --routing --style=scss`, proxy vers le backend en dev.
+- [x] `api.service.ts` typé sur les schémas §4, service de polling (`timer` + `switchMap` + `takeWhile`).
+- [x] Page **liste** : analyses + bouton « Nouvelle analyse ».
+- [x] Page **nouvelle analyse** : upload CSV, champ contexte, redirection vers le détail.
+- [x] Page **détail** : barre de progression + étape courante ; puis 4 blocs : KPIs (total, filtrés, répartition sentiments en donut), thèmes (cards ou barres horizontales triées, avec mini-répartition sentiments et verbatims représentatifs), table verbatims paginée + filtres sentiment/thème, synthèse exécutive (Markdown rendu) et panneau coût/tokens.
+- [x] Graphiques : `ng2-charts` (Chart.js). Pas de lib UI lourde ; Angular Material acceptable si ça fait gagner du temps sur la table et les chips.
 - **Fini quand** : on peut uploader le CSV, regarder la progression, et lire tous les résultats sans ouvrir Swagger.
+
+### Session 3b — Formats d'entrée et contrôle par l'IA (ajout du 22/10, validé par l'auteur)
+- [ ] `services/file_loader.py` : CSV/TSV, TXT (une réponse par ligne), JSON, XLSX, DOCX (paragraphes ou lignes de tableau), PDF (texte seul). Type détecté sur le contenu, pas seulement l'extension. Colonne `verbatim` facultative : sinon, colonne de texte libre détectée automatiquement et signalée.
+- [ ] Refus des fichiers dangereux : exécutables, scripts (`.js`, `.html`, `.svg`…), documents Office à macros, archives dont la taille décompressée explose. Aucun contenu n'est jamais exécuté.
+- [ ] Contrôle IA pendant l'extraction (aucun appel en plus) : chaque verbatim reçoit `flag` = `none` | `off_topic` | `manipulation` ; les signalés sont écartés du regroupement et de la synthèse, avec un motif visible. `PROMPT_VERSION` passe à 2.
+- [ ] Vérification du fichier avant l'analyse : un appel Haiku sur un échantillon ; si ce n'est pas une enquête, l'analyse s'arrête avec un message clair.
+- [ ] Dashboard : dépôt multi-formats, nouveaux motifs dans le tableau, textes d'aide à jour.
+- **Fini quand** : un `.xlsx`, un `.docx`, un `.pdf` et un `.txt` s'analysent depuis le dashboard ; un `.js` ou un `.exe` renommé en `.csv` est refusé ; un verbatim « ignore tes consignes… » est signalé et n'influence pas la synthèse ; `pytest`, `npm run lint` et `npm run build` verts.
 
 ### Session 4 (2-3h) — Dockerisation, K3s, CI/CD, README
 - [ ] `Dockerfile` multi-stage, FastAPI sert `static/` avec fallback SPA.
@@ -327,6 +335,10 @@ Deux workflows séparés pour que la CI reste rapide et que le déploiement ne s
 
 ### Marge
 S'il reste du temps en session 4, dans cet ordre : export CSV enrichi, ArgoCD Application manifest, SSE à la place du polling. **Pas avant que la checklist « fini » de la session 4 soit cochée.**
+
+### V1.1 (après la deadline, demandé le 22/10)
+- Analyse à partir d'une URL de page publique simple (blog, forum, page d'avis intégrée au site d'une marque), en respectant `robots.txt` ; les plateformes qui l'interdisent (avis Google Maps, Facebook, places de marché) restent hors périmètre sauf API officielle.
+- Analyse comparative de plusieurs boutiques ou sources : grille de thèmes commune, écarts de sentiment par thème, écran dédié.
 
 ---
 
