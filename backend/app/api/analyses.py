@@ -23,7 +23,7 @@ from app.schemas import (
     VerbatimPage,
 )
 from app.services.analysis_service import create_or_reuse, run_analysis
-from app.services.csv_loader import CsvError, load_verbatims
+from app.services.file_loader import FileError, load_verbatims
 
 router = APIRouter(prefix="/api/analyses", tags=["analyses"])
 
@@ -46,7 +46,9 @@ def create_analysis(
     engine: EngineDep,
     settings: SettingsDep,
     client_factory: LlmClientFactoryDep,
-    file: Annotated[UploadFile, File(description="CSV with a `verbatim` column")],
+    file: Annotated[
+        UploadFile, File(description="CSV, TSV, TXT, JSON, XLSX, DOCX or PDF survey file")
+    ],
     context: Annotated[str, Form()] = "",
     name: Annotated[str | None, Form()] = None,
 ) -> AnalysisCreated:
@@ -55,19 +57,25 @@ def create_analysis(
         raise HTTPException(
             status.HTTP_413_CONTENT_TOO_LARGE, "Fichier trop volumineux (5 Mo max)."
         )
+    filename = Path(file.filename).name if file.filename else None
     try:
-        texts = load_verbatims(data)
-    except CsvError as exc:
+        loaded = load_verbatims(data, filename or "")
+    except FileError as exc:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(exc)) from exc
 
-    filename = Path(file.filename).name if file.filename else None
     label = (name or "").strip() or Path(filename or "analyse").stem
     analysis, reused = create_or_reuse(
-        session, name=label, context=context.strip(), texts=texts, source_filename=filename
+        session,
+        name=label,
+        context=context.strip(),
+        texts=loaded.texts,
+        source_filename=filename,
+        source_format=loaded.source_format,
+        source_column=loaded.source_column,
     )
     if not reused:
         background_tasks.add_task(
-            run_analysis, engine, analysis.id, texts, settings, client_factory
+            run_analysis, engine, analysis.id, loaded.texts, settings, client_factory
         )
     return AnalysisCreated(id=analysis.id, status=analysis.status, cached=reused)
 

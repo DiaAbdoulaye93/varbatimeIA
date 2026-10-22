@@ -54,6 +54,8 @@ def create_or_reuse(
     context: str,
     texts: Sequence[str],
     source_filename: str | None = None,
+    source_format: str | None = None,
+    source_column: str | None = None,
 ) -> tuple[Analysis, bool]:
     """Return (analysis, reused). A done or running identical analysis is reused."""
     key = content_hash(texts, context)
@@ -70,6 +72,8 @@ def create_or_reuse(
         name=name,
         context=context,
         source_filename=source_filename,
+        source_format=source_format,
+        source_column=source_column,
         content_hash=key,
         total_verbatims=len(texts),
     )

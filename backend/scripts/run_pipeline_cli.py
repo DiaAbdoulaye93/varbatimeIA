@@ -17,7 +17,7 @@ from app.config import get_settings
 from app.pipeline.llm_client import AnthropicLlmClient, LlmError
 from app.pipeline.pipeline import run_pipeline
 from app.schemas import PipelineResult
-from app.services.csv_loader import CsvError, load_verbatims
+from app.services.file_loader import FileError, load_verbatims
 
 logger = logging.getLogger("run_pipeline_cli")
 
@@ -141,9 +141,9 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     try:
-        texts = load_verbatims(args.csv.read_bytes())
+        texts = load_verbatims(args.csv.read_bytes(), args.csv.name).texts
         result = run_pipeline(AnthropicLlmClient(settings), settings, texts, args.context)
-    except (CsvError, LlmError, OSError) as exc:
+    except (FileError, LlmError, OSError) as exc:
         logger.error("%s", exc)
         return 1
 

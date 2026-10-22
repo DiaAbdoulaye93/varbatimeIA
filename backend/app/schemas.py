@@ -190,6 +190,8 @@ class AnalysisSummary(BaseModel):
 
 class AnalysisDetail(AnalysisSummary):
     source_filename: str | None
+    source_format: str | None
+    source_column: str | None
     current_step: str  # on failure: the step that failed
     progress_info: ProgressInfo | None
     error: str | None

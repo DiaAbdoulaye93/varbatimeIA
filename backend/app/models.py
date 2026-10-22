@@ -25,6 +25,8 @@ class Analysis(SQLModel, table=True):
     name: str
     context: str = Field(sa_type=Text)
     source_filename: str | None = None
+    source_format: str | None = None  # csv | tsv | txt | json | xlsx | docx | pdf
+    source_column: str | None = None  # tabular files: the column that was read
     status: str = Field(default=STATUS_PENDING, index=True)
     progress: int = 0
     current_step: str = "preprocess"  # kept on failure: the step that failed
