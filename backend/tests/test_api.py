@@ -160,12 +160,12 @@ def test_failed_analysis_keeps_its_error_and_usage(db: Engine) -> None:
         assert post(api)["cached"] is False
 
 
-def test_invalid_csv_and_unknown_ids(api: TestClient) -> None:
-    response = api.post(
-        "/api/analyses", files={"file": ("x.csv", b"id,texte\n1,abc\n", "text/csv")}
-    )
+def test_refused_file_and_unknown_ids(api: TestClient) -> None:
+    response = api.post("/api/analyses", files={"file": ("x.js", b"alert(1)", "text/javascript")})
     assert response.status_code == 422
-    assert "verbatim" in response.json()["detail"]
+    assert "pas acceptés" in response.json()["detail"]
+    renamed_exe = api.post("/api/analyses", files={"file": ("x.csv", b"MZ\x90\x00", "text/csv")})
+    assert renamed_exe.status_code == 422
     for suffix in ("", "/themes", "/verbatims", "/usage"):
         assert api.get(f"/api/analyses/unknown{suffix}").status_code == 404
 
