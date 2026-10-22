@@ -10,6 +10,7 @@ from fastapi import FastAPI
 from sqlalchemy import Engine
 
 from app.api.analyses import router as analyses_router
+from app.auth import add_basic_auth
 from app.config import get_settings
 from app.db import get_engine, init_db
 from app.pipeline.llm_client import AnthropicLlmClient
@@ -39,6 +40,8 @@ def create_app(
     app.state.engine = engine or get_engine()
     app.state.llm_client_factory = llm_client_factory or AnthropicLlmClient
     app.include_router(analyses_router)
+    if settings.app_password is not None:
+        add_basic_auth(app, settings.app_username, settings.app_password.get_secret_value())
 
     @app.get("/health", response_model=HealthOut, tags=["health"])
     def health() -> HealthOut:

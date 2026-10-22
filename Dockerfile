@@ -38,5 +38,7 @@ ENV PATH="/opt/venv/bin:$PATH" \
 WORKDIR /app
 USER app
 EXPOSE 8000
-# --proxy-headers: the app runs behind the Kubernetes ingress.
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--proxy-headers", "--forwarded-allow-ips", "*"]
+# Port from $PORT when the platform sets one (Render: 10000), 8000 otherwise (K8s, local).
+# --proxy-headers: the app runs behind a reverse proxy (Render, Kubernetes ingress).
+# exec: uvicorn replaces the shell and receives the stop signal directly.
+CMD ["sh", "-c", "exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000} --proxy-headers --forwarded-allow-ips '*'"]

@@ -5,7 +5,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Literal
 
-from pydantic import SecretStr
+from pydantic import SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 BACKEND_DIR = Path(__file__).resolve().parents[1]
@@ -43,6 +43,11 @@ class Settings(BaseSettings):
     database_url: str = "postgresql+psycopg://postgres@localhost:5432/sat_verbatim"
     test_database_url: str = "postgresql+psycopg://postgres@localhost:5432/sat_verbatim_test"
 
+    # HTTP Basic auth on the whole app (except /health) when a password is set: a public
+    # demo URL must not let anyone spend the Anthropic budget.
+    app_username: str = "sat"
+    app_password: SecretStr | None = None
+
     # Built Angular app (dist/frontend/browser) served by FastAPI; absent in development.
     static_dir: Path = BACKEND_DIR / "static"
 
@@ -50,6 +55,15 @@ class Settings(BaseSettings):
     usd_to_xof: float = 604.0
 
     log_level: str = "INFO"
+
+    @field_validator("database_url", "test_database_url")
+    @classmethod
+    def use_psycopg_driver(cls, url: str) -> str:
+        """Accept the plain URLs given by hosted databases (Neon, Render: postgresql://)."""
+        for prefix in ("postgresql://", "postgres://"):
+            if url.startswith(prefix):
+                return "postgresql+psycopg://" + url.removeprefix(prefix)
+        return url
 
 
 @dataclass(frozen=True)
