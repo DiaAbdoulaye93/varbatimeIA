@@ -202,3 +202,42 @@ def test_non_survey_file_fails_with_the_model_reason(db: Engine) -> None:
         assert detail["status"] == "failed"
         assert detail["error"] == rejected["reason"]
         assert detail["current_step"] == "preprocess"
+
+
+# --- source file ---
+
+
+def test_source_file_is_kept_and_served_safely(api: TestClient) -> None:
+    analysis_id = post(api)["id"]
+    assert api.get(f"/api/analyses/{analysis_id}").json()["has_source_file"] is True
+    response = api.get(f"/api/analyses/{analysis_id}/source")
+    assert response.status_code == 200
+    assert response.content == csv_bytes(TEXTS)
+    assert response.headers["content-type"] == "text/plain; charset=utf-8"
+    assert response.headers["content-disposition"].startswith('inline; filename="enquete_test.csv"')
+    assert response.headers["x-content-type-options"] == "nosniff"
+    assert "sandbox" in response.headers["content-security-policy"]
+
+
+def test_office_source_file_is_downloaded(api: TestClient) -> None:
+    from tests.test_file_loader import docx
+
+    data = docx(["Le réseau coupe tout le temps", "Agence très accueillante"])
+    created = api.post(
+        "/api/analyses",
+        files={"file": ("réponses été.docx", data, "application/octet-stream")},
+        data={"context": CONTEXT},
+    ).json()
+    response = api.get(f"/api/analyses/{created['id']}/source")
+    disposition = response.headers["content-disposition"]
+    assert disposition.startswith("attachment;")
+    assert "filename*=UTF-8''r%C3%A9ponses%20%C3%A9t%C3%A9.docx" in disposition
+    assert response.content == data
+
+
+def test_all_answers_can_be_listed_for_printing(api: TestClient) -> None:
+    analysis_id = post(api)["id"]
+    page = api.get(
+        f"/api/analyses/{analysis_id}/verbatims", params={"size": 2000, "include_skipped": True}
+    ).json()
+    assert page["total"] == len(TEXTS) == len(page["items"])

@@ -3,13 +3,24 @@
 from collections import defaultdict
 from pathlib import Path
 from typing import Annotated
+from urllib.parse import quote
 
-from fastapi import APIRouter, BackgroundTasks, File, Form, HTTPException, Query, UploadFile, status
+from fastapi import (
+    APIRouter,
+    BackgroundTasks,
+    File,
+    Form,
+    HTTPException,
+    Query,
+    Response,
+    UploadFile,
+    status,
+)
 from sqlmodel import Session, col, func, select
 
 from app.api.deps import EngineDep, LlmClientFactoryDep, SessionDep, SettingsDep
 from app.config import PRICING
-from app.models import Analysis, LlmCall, Theme, Verbatim, VerbatimTheme
+from app.models import Analysis, LlmCall, SourceFile, Theme, Verbatim, VerbatimTheme
 from app.schemas import (
     AnalysisCreated,
     AnalysisDetail,
@@ -23,7 +34,7 @@ from app.schemas import (
     VerbatimPage,
 )
 from app.services.analysis_service import create_or_reuse, run_analysis
-from app.services.file_loader import FileError, load_verbatims
+from app.services.file_loader import MAX_ROWS, FileError, load_verbatims
 
 router = APIRouter(prefix="/api/analyses", tags=["analyses"])
 
@@ -72,6 +83,7 @@ def create_analysis(
         source_filename=filename,
         source_format=loaded.source_format,
         source_column=loaded.source_column,
+        source_data=data,
     )
     if not reused:
         background_tasks.add_task(
@@ -87,8 +99,58 @@ def list_analyses(session: SessionDep) -> list[Analysis]:
 
 
 @router.get("/{analysis_id}", response_model=AnalysisDetail)
-def get_analysis(analysis_id: str, session: SessionDep) -> Analysis:
-    return _get_analysis(session, analysis_id)
+def get_analysis(analysis_id: str, session: SessionDep) -> AnalysisDetail:
+    analysis = _get_analysis(session, analysis_id)
+    has_source = session.exec(
+        select(func.count()).where(SourceFile.analysis_id == analysis_id)
+    ).one()
+    return AnalysisDetail.model_validate(
+        {**analysis.model_dump(), "has_source_file": bool(has_source)}
+    )
+
+
+# How each format is served back. Text is always shown as plain text: never interpreted.
+_SOURCE_TYPES: dict[str, tuple[str, bool]] = {  # format -> (media type, inline)
+    "pdf": ("application/pdf", True),
+    "csv": ("text/plain", True),
+    "tsv": ("text/plain", True),
+    "txt": ("text/plain", True),
+    "json": ("text/plain", True),
+    "xlsx": ("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", False),
+    "docx": ("application/vnd.openxmlformats-officedocument.wordprocessingml.document", False),
+}
+
+
+@router.get("/{analysis_id}/source", response_class=Response)
+def get_source_file(analysis_id: str, session: SessionDep) -> Response:
+    """The uploaded file: shown in the browser (PDF, text) or downloaded (Excel, Word)."""
+    analysis = _get_analysis(session, analysis_id)
+    source = session.get(SourceFile, analysis_id)
+    if source is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Fichier source non conservé.")
+    media_type, inline = _SOURCE_TYPES.get(
+        analysis.source_format or "", ("application/octet-stream", False)
+    )
+    if media_type == "text/plain":
+        try:
+            source.data.decode("utf-8")
+            media_type += "; charset=utf-8"
+        except UnicodeDecodeError:
+            media_type += "; charset=windows-1252"
+    ascii_name = source.filename.encode("ascii", "replace").decode().replace('"', "")
+    disposition = "inline" if inline else "attachment"
+    # RFC 6266: plain ASCII name for old clients, UTF-8 name (accents) for the others.
+    utf8_name = quote(source.filename)
+    headers = {
+        "Content-Disposition": (
+            f"{disposition}; filename=\"{ascii_name}\"; filename*=UTF-8''{utf8_name}"
+        ),
+        "X-Content-Type-Options": "nosniff",
+    }
+    if not media_type.startswith("application/pdf"):
+        # Uploaded content must never run as a page of this site.
+        headers["Content-Security-Policy"] = "sandbox; default-src 'none'"
+    return Response(content=source.data, media_type=media_type, headers=headers)
 
 
 @router.get("/{analysis_id}/themes", response_model=list[ThemeOut])
@@ -132,7 +194,8 @@ def get_verbatims(
     analysis_id: str,
     session: SessionDep,
     page: Annotated[int, Query(ge=1)] = 1,
-    size: Annotated[int, Query(ge=1, le=100)] = 20,
+    # Up to the whole file, for the printable list of the answers read.
+    size: Annotated[int, Query(ge=1, le=MAX_ROWS)] = 20,
     sentiment: Sentiment | None = None,
     theme_id: int | None = None,
     q: Annotated[str | None, Query(max_length=200)] = None,

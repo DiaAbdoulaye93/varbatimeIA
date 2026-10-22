@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 from typing import Any
 from uuid import uuid4
 
-from sqlalchemy import JSON, DateTime, Text
+from sqlalchemy import JSON, DateTime, LargeBinary, Text
 from sqlmodel import Field, SQLModel
 
 STATUS_PENDING = "pending"
@@ -89,3 +89,14 @@ class LlmCall(SQLModel, table=True):
     output_tokens: int
     duration_ms: int
     created_at: datetime = Field(default_factory=utcnow, sa_type=DateTime(timezone=True))
+
+
+class SourceFile(SQLModel, table=True):
+    """The uploaded file, kept as is so it can be viewed or printed after the analysis."""
+
+    __tablename__ = "source_files"
+
+    analysis_id: str = Field(foreign_key="analyses.id", primary_key=True, ondelete="CASCADE")
+    filename: str
+    size: int
+    data: bytes = Field(sa_type=LargeBinary)

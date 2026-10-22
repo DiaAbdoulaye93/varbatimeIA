@@ -16,6 +16,7 @@ from app.models import (
     STATUS_PROCESSING,
     Analysis,
     LlmCall,
+    SourceFile,
     Theme,
     Verbatim,
     VerbatimTheme,
@@ -57,6 +58,7 @@ def create_or_reuse(
     source_filename: str | None = None,
     source_format: str | None = None,
     source_column: str | None = None,
+    source_data: bytes | None = None,
 ) -> tuple[Analysis, bool]:
     """Return (analysis, reused). A done or running identical analysis is reused."""
     key = content_hash(texts, context)
@@ -79,6 +81,15 @@ def create_or_reuse(
         total_verbatims=len(texts),
     )
     session.add(analysis)
+    if source_data is not None:
+        session.add(
+            SourceFile(
+                analysis_id=analysis.id,
+                filename=source_filename or "fichier",
+                size=len(source_data),
+                data=source_data,
+            )
+        )
     session.commit()
     session.refresh(analysis)
     return analysis, False
