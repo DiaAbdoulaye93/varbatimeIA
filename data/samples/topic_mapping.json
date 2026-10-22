@@ -1,26 +1,42 @@
 {
-  "reseau": ["Couverture et qualité réseau", "Couverture réseau"],
-  "service_client": ["Service client"],
+  "reseau": [
+    "Couverture et qualité réseau",
+    "Couverture réseau"
+  ],
+  "service_client": [
+    "Service client"
+  ],
   "tarif_mobile_money": [
     "Tarification mobile money",
     "Services mobile money",
-    "Service mobile money"
+    "Service mobile money",
+    "Mobile money"
   ],
   "tarif_forfait": [
     "Forfaits et pass internet",
     "Offres internet et forfaits",
     "Crédit téléphonique",
-    "Activation et crédit"
+    "Activation et crédit",
+    "Activation et souscription"
   ],
-  "application": ["Application mobile"],
-  "agence": ["Accueil en agence"],
+  "application": [
+    "Application mobile"
+  ],
+  "agence": [
+    "Accueil en agence",
+    "Agences"
+  ],
   "delai": [
     "Forfaits et pass internet",
     "Activation et crédit",
     "Crédit téléphonique",
     "Services mobile money",
     "Service mobile money",
-    "Service client"
+    "Service client",
+    "Activation et souscription",
+    "Mobile money"
   ],
-  "general": ["Appréciation générale"]
+  "general": [
+    "Appréciation générale"
+  ]
 }
