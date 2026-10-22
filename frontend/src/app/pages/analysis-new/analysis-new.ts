@@ -11,7 +11,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router, RouterLink } from '@angular/router';
 
 import { ApiService } from '../../core/api.service';
-import { CsvInspection, inspectCsv } from '../../core/csv-inspect';
+import { ACCEPT_ATTRIBUTE, ACCEPTED_FORMATS, FileInspection, inspectFile } from '../../core/file-inspect';
 import { nameFromFilename } from '../../core/format';
 import { ApiError } from '../../core/models';
 import { Icon } from '../../shared/icon';
@@ -29,13 +29,15 @@ export class AnalysisNew {
   private readonly destroyRef = inject(DestroyRef);
 
   protected readonly file = signal<File | null>(null);
-  protected readonly inspection = signal<CsvInspection | null>(null);
+  protected readonly inspection = signal<FileInspection | null>(null);
   protected readonly name = signal('');
   protected readonly context = signal('');
   protected readonly dragOver = signal(false);
   protected readonly uploading = signal(false);
   protected readonly uploadPct = signal(0);
   protected readonly serverError = signal<string | null>(null);
+  protected readonly accept = ACCEPT_ATTRIBUTE;
+  protected readonly acceptedFormats = ACCEPTED_FORMATS;
   private autoName = '';
 
   protected readonly fileError = computed(
@@ -111,7 +113,7 @@ export class AnalysisNew {
   private async select(file: File): Promise<void> {
     this.serverError.set(null);
     this.file.set(file);
-    this.inspection.set(await inspectCsv(file));
+    this.inspection.set(await inspectFile(file));
     if (!this.name() || this.name() === this.autoName) {
       this.autoName = nameFromFilename(file.name);
       this.name.set(this.autoName);

@@ -42,6 +42,9 @@
             @if (a.source_filename) {
               · fichier {{ a.source_filename }}
             }
+            @if (a.source_column && a.source_column.toLowerCase() !== 'verbatim') {
+              · colonne lue : « {{ a.source_column }} »
+            }
           </p>
         </div>
         @if (a.status === 'done') {
@@ -100,8 +103,8 @@
                   </div>
                   <div class="stack gap-kpi">
                     <span class="kpi-label">Écartés</span>
-                    <span class="kpi-value muted">{{ int(stats.n_skipped + stats.n_failed) }}</span>
-                    <span class="xs muted">vides ou doublons</span>
+                    <span class="kpi-value muted">{{ int(discarded()) }}</span>
+                    <span class="xs muted">vides, doublons ou signalés</span>
                   </div>
                 </div>
                 <div
@@ -178,14 +181,14 @@
             <div class="stack gap-1">
               <h2 class="section-title">Verbatims</h2>
               <p class="small muted">
-                {{ int(stats.n_used) }} analysés · {{ int(stats.n_skipped + stats.n_failed) }}
+                {{ int(stats.n_used) }} analysés · {{ int(discarded()) }}
                 écartés. La phrase clé de chaque réponse est surlignée.
               </p>
             </div>
             <app-verbatims-table
               [analysisId]="a.id"
               [themes]="r?.themes ?? []"
-              [nSkipped]="stats.n_skipped + stats.n_failed"
+              [nSkipped]="discarded()"
               [(themeId)]="themeFilter"
             />
           </section>

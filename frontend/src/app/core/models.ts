@@ -36,11 +36,14 @@ export interface AnalysisStats {
   n_used: number;
   n_skipped: number;
   n_failed: number;
+  n_flagged: number;
   sentiment_counts: SentimentCounts;
 }
 
 export interface AnalysisDetail extends AnalysisSummary {
   source_filename: string | null;
+  source_format: string | null;
+  source_column: string | null;
   current_step: PipelineStep;
   progress_info: ProgressInfo | null;
   error: string | null;

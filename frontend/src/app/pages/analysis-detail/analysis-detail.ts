@@ -177,6 +177,11 @@ export class AnalysisDetailPage {
     const s = this.analysis()?.stats;
     return s ? formatPct(s.n_used, s.n_received) : '';
   });
+  /** Empty, duplicate, failed or flagged by the AI control. */
+  protected readonly discarded = computed(() => {
+    const s = this.analysis()?.stats;
+    return s ? s.n_skipped + s.n_failed + (s.n_flagged ?? 0) : 0;
+  });
   protected readonly analysedWidth = computed(() => {
     const s = this.analysis()?.stats;
     return s && s.n_received ? (100 * s.n_used) / s.n_received : 0;

@@ -79,37 +79,12 @@
   color: var(--color-primary);
   margin-top: 2px;
 }
-.mini-wrap {
-  border: 1px solid var(--color-border);
-  border-radius: 6px;
-  background: var(--color-surface);
-}
-.mini {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: var(--text-xs);
-  th {
-    text-align: left;
-    font-weight: 600;
-    color: var(--color-ink-muted);
-    padding: 6px 10px;
-    border-bottom: 1px solid var(--color-border);
-    background: var(--color-surface-alt);
-    font-family: var(--font-mono);
-  }
-  td {
-    padding: 6px 10px;
-    border-bottom: 1px solid var(--color-border-subtle);
-    color: var(--color-ink-secondary);
-    vertical-align: top;
-  }
-  .id-col {
-    width: 120px;
-  }
-  .plain {
-    font-family: var(--font-sans);
-    font-weight: 400;
-  }
+.formats {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
 }
 .filebox {
   border-radius: var(--radius-lg);

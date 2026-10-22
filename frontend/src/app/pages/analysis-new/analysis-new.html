@@ -37,39 +37,31 @@
           (drop)="onDrop($event)"
         >
           <span class="drop-icon"><app-icon name="upload" [size]="22" /></span>
-          <p class="drop-title">Glissez-déposez votre fichier CSV ici</p>
+          <p class="drop-title">Glissez-déposez votre fichier ici</p>
           <p class="small muted">ou</p>
           <label class="btn btn-stroked" for="file">
             <app-icon name="folder" />Parcourir…
           </label>
-          <input id="file" class="sr-only" type="file" accept=".csv,text/csv" (change)="onFileInput($event)" />
-          <p class="xs muted">
-            Fichier <code>.csv</code> · encodage UTF-8 · séparateur virgule ou point-virgule
-          </p>
+          <input id="file" class="sr-only" type="file" [accept]="accept" (change)="onFileInput($event)" />
+          <p class="xs muted">{{ acceptedFormats }} · 5 Mo maximum</p>
         </div>
         <div class="notice">
           <span class="info-icon"><app-icon name="info" /></span>
           <div class="stack gap-2 grow">
-            <p class="small strong">Format attendu</p>
-            <p class="small secondary">
-              Une colonne <code>verbatim</code> obligatoire (le texte de la réponse) et une colonne
-              <code>id</code> facultative (identifiant du répondant). Les autres colonnes sont
-              ignorées. Les réponses vides et les doublons sont écartés automatiquement.
-            </p>
-            <div class="table-scroll mini-wrap">
-              <table class="mini">
-                <thead>
-                  <tr>
-                    <th class="id-col">id <span class="plain">(facultatif)</span></th>
-                    <th>verbatim <span class="plain">(obligatoire)</span></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr><td>1</td><td>Le réseau coupe tout le temps à Pikine, surtout le soir après 20h. c pas normal</td></tr>
-                  <tr><td>2</td><td>Rien à dire, tout va bien pour moi.</td></tr>
-                </tbody>
-              </table>
-            </div>
+            <p class="small strong">Quels fichiers ?</p>
+            <ul class="small secondary formats">
+              <li>
+                <strong>Tableau</strong> (CSV, Excel, tableau Word, JSON) : la colonne des réponses
+                est détectée automatiquement ; nommez-la <code>verbatim</code> pour être certain du
+                choix.
+              </li>
+              <li><strong>Texte</strong> (TXT, Word, PDF) : une réponse par ligne ou par paragraphe.</li>
+              <li>
+                Les programmes, scripts et documents à macros sont refusés. Les réponses vides, les
+                doublons, le hors-sujet et les tentatives de manipulation de l'IA sont écartés
+                automatiquement.
+              </li>
+            </ul>
           </div>
         </div>
       } @else if (fileError()) {
@@ -77,32 +69,27 @@
           <span class="file-icon file-icon-error"><app-icon name="warning" [size]="22" /></span>
           <div class="stack gap-1 grow">
             <p class="strong file-error-title">{{ fileError() }}</p>
-            @if (!info.hasVerbatim && info.columns.length) {
-              <p class="small secondary">
-                Le fichier <strong>{{ info.filename }}</strong> ({{ info.rows }} lignes) contient les
-                colonnes
-                @for (c of info.columns; track $index; let last = $last; let i = $index) {
-                  <code>{{ c }}</code>{{ last ? '' : i === info.columns.length - 2 ? ' et ' : ', ' }}
-                }. Renommez la colonne qui contient les réponses en <code>verbatim</code>, puis
-                rechargez le fichier.
-              </p>
-            } @else {
-              <p class="small secondary">{{ info.filename }} · {{ info.sizeLabel }}</p>
-            }
+            <p class="small secondary">{{ info.filename }} · {{ info.sizeLabel }}</p>
           </div>
           <label class="btn btn-stroked" for="file-retry"><app-icon name="folder" />Choisir un autre fichier</label>
-          <input id="file-retry" class="sr-only" type="file" accept=".csv,text/csv" (change)="onFileInput($event)" />
+          <input id="file-retry" class="sr-only" type="file" [accept]="accept" (change)="onFileInput($event)" />
         </div>
-        <p class="hint hint-error">Le fichier doit contenir une colonne « verbatim ».</p>
+        <p class="hint hint-error">Formats acceptés : {{ acceptedFormats }}.</p>
       } @else {
         <div class="filebox filebox-ok">
           <span class="file-icon"><app-icon name="file" [size]="22" /></span>
           <div class="stack gap-1 grow">
             <p class="strong filename">{{ info.filename }}</p>
             <p class="small muted">
-              {{ info.sizeLabel }} · {{ info.rows }} lignes · colonnes détectées :
-              @for (c of info.columns; track $index; let last = $last) {
-                <code>{{ c }}</code>{{ last ? '' : ', ' }}
+              {{ info.formatLabel }} · {{ info.sizeLabel }}
+              @if (info.rows !== null) {
+                · {{ info.rows }} lignes
+              }
+              @if (info.columns.length) {
+                · colonnes détectées :
+                @for (c of info.columns; track $index; let last = $last) {
+                  <code>{{ c }}</code>{{ last ? '' : ', ' }}
+                }
               }
             </p>
             @if (uploading()) {
@@ -117,8 +104,14 @@
               </div>
             } @else {
               <p class="small ok-line">
-                <app-icon name="check" [size]="16" [strokeWidth]="2.5" />Colonne « verbatim » trouvée,
-                fichier prêt à l'analyse
+                <app-icon name="check" [size]="16" [strokeWidth]="2.5" />
+                @if (info.textColumn) {
+                  Colonne « {{ info.textColumn }} » trouvée, fichier prêt à l'analyse
+                } @else if (info.columns.length) {
+                  Fichier prêt : la colonne des réponses sera détectée à l'analyse
+                } @else {
+                  Fichier prêt à l'analyse
+                }
               </p>
             }
           </div>

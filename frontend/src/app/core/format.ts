@@ -42,6 +42,7 @@ export const STEPS: readonly { key: PipelineStep; label: string }[] = [
 ];
 
 export const USAGE_STEP_LABELS: Record<string, string> = {
+  check: 'Vérification du fichier',
   extract: 'Extraction',
   cluster: 'Regroupement',
   synthesize: 'Synthèse',
@@ -97,6 +98,8 @@ export function skippedMotif(reason: string): string {
   if (reason === 'empty') return 'vide';
   if (reason.startsWith('duplicate_of:')) return `doublon du n° ${reason.split(':')[1]}`;
   if (reason === 'extraction_failed') return 'analyse impossible';
+  if (reason === 'off_topic') return "hors-sujet (signalé par l'IA)";
+  if (reason === 'manipulation') return "tentative de manipulation de l'IA";
   return reason;
 }
 
