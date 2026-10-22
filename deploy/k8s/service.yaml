@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: verbatim-analyzer
+  namespace: sat
+spec:
+  selector:
+    app: verbatim-analyzer
+  ports:
+    - name: http
+      port: 80
+      targetPort: http

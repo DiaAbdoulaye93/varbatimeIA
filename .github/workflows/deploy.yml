@@ -1,0 +1,87 @@
+# Deploy: on every push to main, build the single Docker image, push it to GitHub
+# Container Registry (GHCR), then point the K3s Deployment at the new image.
+#
+# Required repository secret (Settings > Secrets and variables > Actions):
+#   KUBECONFIG_B64  kubeconfig of a ServiceAccount limited to the `sat` namespace,
+#                   base64-encoded (`base64 -w0 kubeconfig`).
+# The Anthropic key never goes to GitHub: it lives in the cluster (Secret anthropic-api-key).
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  # Manual run from the Actions tab, e.g. to redeploy after a cluster change.
+  workflow_dispatch:
+
+# Never run two deployments at the same time; let the running one finish.
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    # GITHUB_TOKEN is created by GitHub for each run: these scopes let it push to GHCR.
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image: ${{ steps.names.outputs.image }}
+      tag: ${{ steps.names.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v7
+
+      # Image name must be lowercase; the tag is the short commit SHA (traceable, unique).
+      - name: Compute image name and tag
+        id: names
+        run: |
+          echo "image=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/sat-verbatim-analyzer" >> "$GITHUB_OUTPUT"
+          echo "tag=sha-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+
+      # Buildx is the Docker builder that supports the GitHub Actions layer cache.
+      - uses: docker/setup-buildx-action@v4
+
+      # Log in to GHCR with the run's own token: no secret to create for pushing images.
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Build the multi-stage Dockerfile and push two tags: sha-<commit> and latest.
+      # cache-from/to type=gha reuses unchanged layers (npm ci, uv sync) between runs.
+      - uses: docker/build-push-action@v7
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ steps.names.outputs.image }}:${{ steps.names.outputs.tag }}
+            ${{ steps.names.outputs.image }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy:
+    needs: build
+    # The K3s API server must be reachable from GitHub's runners. If the cluster is behind
+    # NAT, install a self-hosted runner on the server and use `runs-on: self-hosted` instead.
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      # Write the kubeconfig from the secret into a private temporary file.
+      - name: Configure kubectl
+        env:
+          KUBECONFIG_B64: ${{ secrets.KUBECONFIG_B64 }}
+        run: |
+          echo "$KUBECONFIG_B64" | base64 -d > "$RUNNER_TEMP/kubeconfig"
+          chmod 600 "$RUNNER_TEMP/kubeconfig"
+          echo "KUBECONFIG=$RUNNER_TEMP/kubeconfig" >> "$GITHUB_ENV"
+
+      # Point the Deployment at the new image; Kubernetes then replaces the pod.
+      - name: Update the image
+        run: >
+          kubectl -n sat set image deployment/verbatim-analyzer
+          app=${{ needs.build.outputs.image }}:${{ needs.build.outputs.tag }}
+
+      # Wait for the new pod to pass its readiness probe (/health); fail the job otherwise.
+      - name: Wait for the rollout
+        run: kubectl -n sat rollout status deployment/verbatim-analyzer --timeout=180s

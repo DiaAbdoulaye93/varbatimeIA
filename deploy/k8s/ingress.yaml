@@ -1,0 +1,23 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: verbatim-analyzer
+  namespace: sat
+  annotations:
+    # CSV uploads up to 5 MB (the API limit), plus multipart overhead.
+    nginx.ingress.kubernetes.io/proxy-body-size: 8m
+spec:
+  # K3s ships Traefik by default: this manifest targets an installed NGINX ingress controller.
+  ingressClassName: nginx
+  rules:
+    # Replace with the public host name pointing at the K3s server.
+    - host: verbatims.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: verbatim-analyzer
+                port:
+                  name: http

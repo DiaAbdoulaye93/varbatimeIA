@@ -1,0 +1,67 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: verbatim-analyzer
+  namespace: sat
+  labels:
+    app: verbatim-analyzer
+spec:
+  replicas: 1
+  # Analyses run as in-process background tasks: never let two pods overlap during a
+  # rollout (the new one would mark the old one's running analyses as interrupted).
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: verbatim-analyzer
+  template:
+    metadata:
+      labels:
+        app: verbatim-analyzer
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+      containers:
+        - name: app
+          # Replaced by `kubectl set image` in .github/workflows/deploy.yml (sha-<commit> tag).
+          image: ghcr.io/OWNER/sat-verbatim-analyzer:latest
+          ports:
+            - name: http
+              containerPort: 8000
+          env:
+            - name: ANTHROPIC_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: anthropic-api-key
+                  key: ANTHROPIC_API_KEY
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: database-url
+                  key: DATABASE_URL
+            - name: USD_TO_XOF
+              value: "604"
+            - name: LOG_LEVEL
+              value: INFO
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 30
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 512Mi
+          securityContext:
+            allowPrivilegeEscalation: false

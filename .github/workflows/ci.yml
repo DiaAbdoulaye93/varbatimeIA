@@ -1,0 +1,90 @@
+# CI: lint and test the backend and the frontend on every push and pull request.
+# Nothing is deployed here; a red run blocks the PR. No API key is needed: the LLM is mocked.
+name: CI
+
+on:
+  push:
+  pull_request:
+
+# A newer push on the same branch cancels the run still in progress.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    # A throwaway PostgreSQL 16 for the tests, same engine as in development.
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: sat_verbatim_test
+        ports:
+          - 5432:5432
+        # Wait until the database accepts connections before running the steps.
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      TEST_DATABASE_URL: postgresql+psycopg://postgres:postgres@localhost:5432/sat_verbatim_test
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      # Get the repository code on the runner.
+      - uses: actions/checkout@v7
+
+      # Install uv (pinned to the version used locally) and cache its downloads,
+      # keyed on uv.lock so the cache is rebuilt only when dependencies change.
+      - uses: astral-sh/setup-uv@v10
+        with:
+          version: 0.13.4
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+
+      # Create the virtualenv exactly as locked (fails if uv.lock is out of date).
+      - name: Install dependencies
+        run: uv sync --frozen
+
+      # Same checks as the pre-commit routine in CLAUDE.md.
+      - name: Lint
+        run: |
+          uv run ruff check .
+          uv run ruff format --check .
+
+      # Unit and API tests on the PostgreSQL service above, LLM mocked.
+      - name: Tests
+        run: uv run pytest -q
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v7
+
+      # Node 24 (supported by Angular 21) with the npm cache keyed on package-lock.json.
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      # Clean install from package-lock.json.
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      # Production build: also enforces the bundle size budgets of angular.json.
+      - name: Build
+        run: npm run build
+
+      - name: Unit tests
+        run: npx ng test --watch=false
