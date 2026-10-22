@@ -63,6 +63,11 @@ export class ApiService {
     return this.http.get<VerbatimPage>(`${BASE}/${id}/verbatims`, { params });
   }
 
+  /** The uploaded file, served back as is (opened in a new tab or downloaded). */
+  sourceUrl(id: string): string {
+    return `${BASE}/${id}/source`;
+  }
+
   getUsage(id: string): Observable<Usage> {
     return this.http.get<Usage>(`${BASE}/${id}/usage`);
   }

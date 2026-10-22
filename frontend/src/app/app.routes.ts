@@ -12,6 +12,12 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/analysis-new/analysis-new').then((m) => m.AnalysisNew),
   },
   {
+    path: 'analyses/:id/reponses',
+    title: 'Réponses lues · Analyseur de verbatims',
+    loadComponent: () =>
+      import('./pages/answers-print/answers-print').then((m) => m.AnswersPrint),
+  },
+  {
     path: 'analyses/:id',
     title: 'Analyse · Analyseur de verbatims',
     loadComponent: () =>

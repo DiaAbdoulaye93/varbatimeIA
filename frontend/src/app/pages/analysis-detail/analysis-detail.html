@@ -47,9 +47,19 @@
             }
           </p>
         </div>
-        @if (a.status === 'done') {
-          <a class="btn btn-stroked" routerLink="/analyses/nouvelle"><app-icon name="plus" />Nouvelle analyse</a>
-        }
+        <div class="row gap-2">
+          @if (a.has_source_file) {
+            <a class="btn btn-stroked" [href]="sourceUrl()" target="_blank" rel="noopener">
+              <app-icon name="file" />{{ sourceDownloads() ? 'Télécharger le fichier source' : 'Fichier source' }}
+            </a>
+          }
+          @if (a.status === 'done') {
+            <a class="btn btn-stroked" [routerLink]="['/analyses', a.id, 'reponses']">
+              <app-icon name="print" />Réponses lues
+            </a>
+            <a class="btn btn-stroked" routerLink="/analyses/nouvelle"><app-icon name="plus" />Nouvelle analyse</a>
+          }
+        </div>
       </div>
       @if (a.status === 'done') {
         <nav class="tabnav" aria-label="Sections de l'analyse">

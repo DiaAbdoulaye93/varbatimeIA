@@ -173,6 +173,11 @@ export class AnalysisDetailPage {
     }
   });
   protected readonly reference = computed(() => shortRef(this.id()));
+  protected readonly sourceUrl = computed(() => this.api.sourceUrl(this.id()));
+  /** Excel and Word cannot be shown by the browser: the server sends them as downloads. */
+  protected readonly sourceDownloads = computed(() =>
+    ['xlsx', 'docx'].includes(this.analysis()?.source_format ?? ''),
+  );
   protected readonly analysedPct = computed(() => {
     const s = this.analysis()?.stats;
     return s ? formatPct(s.n_used, s.n_received) : '';

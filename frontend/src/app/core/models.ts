@@ -44,6 +44,7 @@ export interface AnalysisDetail extends AnalysisSummary {
   source_filename: string | null;
   source_format: string | null;
   source_column: string | null;
+  has_source_file: boolean;
   current_step: PipelineStep;
   progress_info: ProgressInfo | null;
   error: string | null;

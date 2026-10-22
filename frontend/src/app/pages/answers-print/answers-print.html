@@ -1,0 +1,83 @@
+<main class="page">
+  @if (failed()) {
+    <section class="card padded" role="alert">
+      Impossible de charger les réponses. Vérifiez que l'API est démarrée, puis rechargez la page.
+    </section>
+  } @else if (!data()) {
+    <section class="card padded muted">Chargement des réponses…</section>
+  } @else {
+    @let d = data()!;
+    <nav class="breadcrumb no-print" aria-label="Fil d'Ariane">
+      <a routerLink="/">Analyses</a><span aria-hidden="true">/</span>
+      <a [routerLink]="['/analyses', d.analysis.id]">{{ d.analysis.name }}</a
+      ><span aria-hidden="true">/</span><span class="current">Réponses lues</span>
+    </nav>
+
+    <div class="title-row">
+      <div class="stack gap-2">
+        <h1 class="page-title">Réponses lues · {{ d.analysis.name }}</h1>
+        @if (d.analysis.context) {
+          <p class="secondary">{{ d.analysis.context }}</p>
+        }
+        <p class="small muted num">
+          @if (d.analysis.source_filename) {
+            Fichier {{ d.analysis.source_filename }} ·
+          }
+          @if (d.analysis.source_column) {
+            colonne « {{ d.analysis.source_column }} » ·
+          }
+          {{ int(d.answers.length) }} réponses lues, dont {{ int(skippedCount()) }} écartées ·
+          analyse lancée le {{ launched() }}
+        </p>
+      </div>
+      <div class="row gap-2 no-print">
+        @if (d.analysis.has_source_file) {
+          <a class="btn btn-stroked" [href]="sourceUrl(d.analysis.id)" target="_blank" rel="noopener">
+            <app-icon name="file" />Fichier source
+          </a>
+        }
+        <button type="button" class="btn btn-primary" (click)="print()">
+          <app-icon name="print" />Imprimer
+        </button>
+      </div>
+    </div>
+
+    <p class="small muted no-print">
+      Voici chaque réponse telle que l'outil l'a lue dans le fichier, dans l'ordre. Vérifiez ici
+      qu'aucune réponse n'a été coupée, fusionnée ou oubliée.
+    </p>
+
+    <section class="card sheet">
+      <table class="tbl">
+        <thead>
+          <tr>
+            <th class="no-col">N°</th>
+            <th>Réponse</th>
+            <th class="status-col">Statut</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (v of d.answers; track v.idx) {
+            <tr [class.row-off]="v.skipped_reason !== null">
+              <td class="num muted top">{{ v.idx }}</td>
+              <td class="text">
+                @if (v.text.trim()) {
+                  {{ v.text }}
+                } @else {
+                  <span class="muted"><em>(réponse vide)</em></span>
+                }
+              </td>
+              <td class="top">
+                @if (v.skipped_reason !== null) {
+                  <span class="xs muted">Écartée : {{ motif(v.skipped_reason) }}</span>
+                } @else {
+                  <app-sentiment-badge [sentiment]="v.sentiment" />
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </section>
+  }
+</main>

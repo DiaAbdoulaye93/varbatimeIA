@@ -1,0 +1,40 @@
+.padded {
+  padding: var(--space-6);
+}
+.title-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--space-4);
+}
+.sheet {
+  overflow: hidden;
+}
+.no-col {
+  width: 64px;
+}
+.status-col {
+  width: 200px;
+}
+.text {
+  line-height: 1.55;
+  white-space: pre-line;
+}
+.top {
+  vertical-align: top;
+}
+
+@media print {
+  .sheet {
+    border: 0;
+    box-shadow: none;
+    overflow: visible;
+  }
+  tr {
+    break-inside: avoid;
+  }
+  thead {
+    display: table-header-group; // repeat the column titles on every printed page
+  }
+}
