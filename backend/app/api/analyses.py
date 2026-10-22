@@ -57,9 +57,7 @@ def create_analysis(
     engine: EngineDep,
     settings: SettingsDep,
     client_factory: LlmClientFactoryDep,
-    file: Annotated[
-        UploadFile, File(description="CSV, TSV, TXT, JSON, XLSX, DOCX or PDF survey file")
-    ],
+    file: Annotated[UploadFile, File(description="CSV, TSV, TXT, JSON, XLSX or DOCX survey file")],
     context: Annotated[str, Form()] = "",
     name: Annotated[str | None, Form()] = None,
 ) -> AnalysisCreated:
@@ -111,7 +109,6 @@ def get_analysis(analysis_id: str, session: SessionDep) -> AnalysisDetail:
 
 # How each format is served back. Text is always shown as plain text: never interpreted.
 _SOURCE_TYPES: dict[str, tuple[str, bool]] = {  # format -> (media type, inline)
-    "pdf": ("application/pdf", True),
     "csv": ("text/plain", True),
     "tsv": ("text/plain", True),
     "txt": ("text/plain", True),
@@ -123,7 +120,7 @@ _SOURCE_TYPES: dict[str, tuple[str, bool]] = {  # format -> (media type, inline)
 
 @router.get("/{analysis_id}/source", response_class=Response)
 def get_source_file(analysis_id: str, session: SessionDep) -> Response:
-    """The uploaded file: shown in the browser (PDF, text) or downloaded (Excel, Word)."""
+    """The uploaded file: shown in the browser (text) or downloaded (Excel, Word)."""
     analysis = _get_analysis(session, analysis_id)
     source = session.get(SourceFile, analysis_id)
     if source is None:
@@ -146,10 +143,9 @@ def get_source_file(analysis_id: str, session: SessionDep) -> Response:
             f"{disposition}; filename=\"{ascii_name}\"; filename*=UTF-8''{utf8_name}"
         ),
         "X-Content-Type-Options": "nosniff",
-    }
-    if not media_type.startswith("application/pdf"):
         # Uploaded content must never run as a page of this site.
-        headers["Content-Security-Policy"] = "sandbox; default-src 'none'"
+        "Content-Security-Policy": "sandbox; default-src 'none'",
+    }
     return Response(content=source.data, media_type=media_type, headers=headers)
 
 

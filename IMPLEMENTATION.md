@@ -318,12 +318,12 @@ Deux workflows séparés pour que la CI reste rapide et que le déploiement ne s
 - **Fini quand** : on peut uploader le CSV, regarder la progression, et lire tous les résultats sans ouvrir Swagger.
 
 ### Session 3b — Formats d'entrée et contrôle par l'IA (ajout du 22/10, validé par l'auteur)
-- [x] `services/file_loader.py` : CSV/TSV, TXT (une réponse par ligne), JSON, XLSX, DOCX (paragraphes ou lignes de tableau), PDF (texte seul). Type détecté sur le contenu, pas seulement l'extension. Colonne `verbatim` facultative : sinon, colonne de texte libre détectée automatiquement et signalée.
+- [x] `services/file_loader.py` : CSV/TSV, TXT (une réponse par ligne), JSON, XLSX, DOCX (paragraphes ou lignes de tableau). Le PDF, ajouté puis retiré le 22/10 à la demande de l'auteur, est refusé. Type détecté sur le contenu, pas seulement l'extension. Colonne `verbatim` facultative : sinon, colonne de texte libre détectée automatiquement et signalée.
 - [x] Refus des fichiers dangereux : exécutables, scripts (`.js`, `.html`, `.svg`…), documents Office à macros, archives dont la taille décompressée explose. Aucun contenu n'est jamais exécuté.
 - [x] Contrôle IA pendant l'extraction (aucun appel en plus) : chaque verbatim reçoit `flag` = `none` | `off_topic` | `manipulation` ; les signalés sont écartés du regroupement et de la synthèse, avec un motif visible. `PROMPT_VERSION` passe à 2.
 - [x] Vérification du fichier avant l'analyse : un appel Haiku sur un échantillon ; si ce n'est pas une enquête, l'analyse s'arrête avec un message clair.
 - [x] Dashboard : dépôt multi-formats, nouveaux motifs dans le tableau, textes d'aide à jour.
-- **Fini quand** : un `.xlsx`, un `.docx`, un `.pdf` et un `.txt` s'analysent depuis le dashboard ; un `.js` ou un `.exe` renommé en `.csv` est refusé ; un verbatim « ignore tes consignes… » est signalé et n'influence pas la synthèse ; `pytest`, `npm run lint` et `npm run build` verts.
+- **Fini quand** : un `.xlsx`, un `.docx` et un `.txt` s'analysent depuis le dashboard ; un `.js` ou un `.exe` renommé en `.csv` est refusé ; un verbatim « ignore tes consignes… » est signalé et n'influence pas la synthèse ; `pytest`, `npm run lint` et `npm run build` verts.
 
 ### Session 4 (2-3h) — Dockerisation, K3s, CI/CD, README
 - [ ] `Dockerfile` multi-stage, FastAPI sert `static/` avec fallback SPA.

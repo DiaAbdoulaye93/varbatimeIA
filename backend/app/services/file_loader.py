@@ -1,4 +1,4 @@
-"""Read uploaded survey files: CSV/TSV, TXT, JSON, XLSX, DOCX and PDF.
+"""Read uploaded survey files: CSV/TSV, TXT, JSON, XLSX and DOCX.
 
 The format is recognised from the file content (magic bytes), the extension only breaks
 ties. Executables, scripts, markup and macro-enabled documents are refused, and nothing in
@@ -18,11 +18,8 @@ from typing import Any
 
 from docx import Document
 from openpyxl import load_workbook
-from pypdf import PdfReader
-from pypdf.errors import PdfReadError
 
 MAX_ROWS = 2_000
-MAX_PDF_PAGES = 200
 MAX_UNZIPPED_BYTES = 50 * 1024 * 1024  # zip bomb guard for .xlsx / .docx
 MAX_ZIP_ENTRIES = 2_000
 SNIFF_CHARS = 4_096
@@ -57,13 +54,14 @@ BLOCKED_EXTENSIONS = frozenset(
         ".py", ".rb", ".pl", ".sh", ".bash", ".bat", ".cmd", ".ps1", ".vbs", ".vbe", ".wsf",
         ".exe", ".dll", ".msi", ".com", ".scr", ".jar", ".apk", ".app", ".bin", ".iso",
         ".zip", ".rar", ".7z", ".gz", ".tar", ".xlsm", ".xltm", ".docm", ".dotm", ".pptm",
-        ".hta", ".lnk", ".reg",
+        ".hta", ".lnk", ".reg", ".pdf",
     }
 )  # fmt: skip
-SUPPORTED = "CSV, TSV, TXT, JSON, Excel (.xlsx), Word (.docx) ou PDF"
+SUPPORTED = "CSV, TSV, TXT, JSON, Excel (.xlsx) ou Word (.docx)"
 
-# Magic bytes of formats refused outright.
+# Magic bytes of formats refused outright, even under an accepted extension.
 _DANGEROUS_SIGNATURES = (
+    (b"%PDF-", "un document PDF, format non pris en charge"),
     (b"MZ", "un programme Windows"),
     (b"\x7fELF", "un programme Linux"),
     (b"\xcf\xfa\xed\xfe", "un programme macOS"),
@@ -84,7 +82,7 @@ class FileError(ValueError):
 @dataclass(frozen=True)
 class LoadedFile:
     texts: list[str]
-    source_format: str  # csv | tsv | txt | json | xlsx | docx | pdf
+    source_format: str  # csv | tsv | txt | json | xlsx | docx
     source_column: str | None = None  # tabular formats: the column read
 
 
@@ -101,12 +99,9 @@ def load_verbatims(data: bytes, filename: str = "") -> LoadedFile:
         if data.startswith(signature):
             raise FileError(f"Ce fichier est {kind} : il n'est pas accepté.")
 
-    if data.startswith(b"PK\x03\x04"):
-        loaded = _load_office(data)
-    elif data.startswith(b"%PDF-"):
-        loaded = _load_pdf(data)
-    else:
-        loaded = _load_text(data, extension)
+    # Office documents (.xlsx, .docx) are zip containers; everything else is read as text.
+    is_office = data.startswith(b"PK\x03\x04")
+    loaded = _load_office(data) if is_office else _load_text(data, extension)
 
     texts = loaded.texts
     if not any(t.strip() for t in texts):
@@ -151,7 +146,7 @@ def _lines(text: str) -> list[str]:
     return [line.strip() for line in text.splitlines() if line.strip()]
 
 
-# --- Free text (TXT, DOCX paragraphs, PDF pages) -> one string per response ---
+# --- Free text (TXT, DOCX paragraphs) -> one string per response ---
 
 # A response number at the start of a line: "12", "12.", "12)", "12 -" (+ optional text).
 _NUMBERED = re.compile(r"^\s*(\d{1,6})(?:\s*[.):\-–]\s*|\s+)?(.*)$")
@@ -387,23 +382,3 @@ def _load_docx(data: bytes) -> LoadedFile:
 
 def _is_heading(style_name: str) -> bool:
     return style_name.lower().startswith(("heading", "titre", "title"))
-
-
-# --- PDF ---
-
-
-def _load_pdf(data: bytes) -> LoadedFile:
-    try:
-        reader = PdfReader(io.BytesIO(data))
-        if reader.is_encrypted:
-            raise FileError("Ce PDF est protégé par un mot de passe : il n'est pas accepté.")
-        if len(reader.pages) > MAX_PDF_PAGES:
-            raise FileError(f"PDF trop long : {len(reader.pages)} pages (maximum {MAX_PDF_PAGES}).")
-        page_texts = [page.extract_text() or "" for page in reader.pages]
-    except PdfReadError as exc:
-        raise FileError("PDF illisible ou corrompu.") from exc
-    # Pages are kept apart so that repeated headers and footers can be recognised.
-    texts = split_responses(page_texts)
-    if not texts:
-        raise FileError("Aucun texte n'a pu être extrait de ce PDF (document scanné ?).")
-    return LoadedFile(texts=texts, source_format="pdf")

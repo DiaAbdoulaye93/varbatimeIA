@@ -38,43 +38,6 @@ def docx(paragraphs: list[str], table: list[list[str]] | None = None) -> bytes:
     return buffer.getvalue()
 
 
-def pdf(lines: list[str], *more_pages: list[str]) -> bytes:
-    """A minimal PDF, one text line per entry (ASCII only); extra args are extra pages."""
-    pages = [lines, *more_pages]
-    # Objects: 1 catalog, 2 page tree, 3 font, then a (page, content stream) pair per page.
-    kids = " ".join(f"{4 + 2 * i} 0 R" for i in range(len(pages)))
-    objects = [
-        b"<< /Type /Catalog /Pages 2 0 R >>",
-        b"<< /Type /Pages /Kids [%s] /Count %d >>" % (kids.encode(), len(pages)),
-        b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
-    ]
-    for i, page_lines in enumerate(pages):
-        ops = ["BT", "/F1 12 Tf", "14 TL", "72 720 Td"]
-        for line in page_lines:
-            ops += [f"({line}) Tj", "T*"]
-        ops.append("ET")
-        stream = "\n".join(ops).encode()
-        objects.append(
-            b"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] "
-            b"/Resources << /Font << /F1 3 0 R >> >> /Contents %d 0 R >>" % (5 + 2 * i)
-        )
-        objects.append(b"<< /Length %d >>\nstream\n" % len(stream) + stream + b"\nendstream")
-    out = io.BytesIO()
-    out.write(b"%PDF-1.4\n")
-    offsets = []
-    for number, body in enumerate(objects, start=1):
-        offsets.append(out.tell())
-        out.write(b"%d 0 obj\n" % number + body + b"\nendobj\n")
-    xref = out.tell()
-    out.write(b"xref\n0 %d\n0000000000 65535 f \n" % (len(objects) + 1))
-    for offset in offsets:
-        out.write(b"%010d 00000 n \n" % offset)
-    out.write(
-        b"trailer\n<< /Size %d /Root 1 0 R >>\nstartxref\n%d\n%%%%EOF\n" % (len(objects) + 1, xref)
-    )
-    return out.getvalue()
-
-
 # --- accepted formats ---
 
 
@@ -151,12 +114,6 @@ def test_docx_table() -> None:
     assert (loaded.source_column, loaded.texts) == ("Avis", ["Réseau lent", "Bien"])
 
 
-def test_pdf() -> None:
-    loaded = load_verbatims(pdf(["Le reseau coupe le soir", "Agence tres accueillante"]), "x.pdf")
-    assert loaded.source_format == "pdf"
-    assert loaded.texts == ["Le reseau coupe le soir", "Agence tres accueillante"]
-
-
 def test_format_is_read_from_content_not_extension() -> None:
     data = xlsx([["avis"], ["bien"]])
     assert load_verbatims(data, "renamed.csv").source_format == "xlsx"
@@ -208,49 +165,51 @@ def test_too_many_rows() -> None:
         load_verbatims(("verbatim\n" + "x\n" * (MAX_ROWS + 1)).encode(), "big.csv")
 
 
-# --- free text split into responses (PDF exports of a table, numbered lists) ---
-
-HEADER = ["N", "Verbatim (reponse libre)"]
+# --- free text split into responses (numbered lists, exports of a table) ---
 
 
-def test_pdf_table_export_with_numbers_and_repeated_headers() -> None:
-    data = pdf(
-        ["Page 1", "Enquete de satisfaction", "300 reponses - export du 22 octobre", *HEADER,
-         "1", "Le reseau coupe", "le soir a Pikine", "2", "Agence top"],
-        ["Page 2", *HEADER, "3", "Frais trop eleves", "4", "Appli lente"],
-        ["Page 3", *HEADER, "5", "Pratique pour payer", "dommage."],
-    )  # fmt: skip
-    assert load_verbatims(data, "export.pdf").texts == [
+def test_numbered_export_with_preamble_and_wrapped_answers() -> None:
+    lines = [
+        "Enquete de satisfaction",
+        "300 reponses - export du 22 octobre",
+        "N",
+        "Verbatim",
+        "1",
+        "Le reseau coupe",
+        "le soir a Pikine",
+        "2",
+        "Agence top",
+        "Page 2",
+        "3",
+        "Frais eleves",
+    ]
+    assert load_verbatims("\n".join(lines).encode(), "export.txt").texts == [
         "Le reseau coupe le soir a Pikine",
         "Agence top",
-        "Frais trop eleves",
-        "Appli lente",
-        "Pratique pour payer dommage.",
+        "Frais eleves",
     ]
 
 
-def test_answer_repeated_at_two_page_edges_is_kept() -> None:
-    pages = [
-        ["Page 1", *HEADER, "1", "Service utile", "2", "Bien"],
-        ["Page 2", *HEADER, "3", "Service utile", "4", "Nul"],
-        ["Page 3", *HEADER, "5", "Ok merci", "6", "Rapide"],
-        ["Page 4", *HEADER, "7", "Lent", "8", "Correct"],
-        ["Page 5", *HEADER, "9", "Cher", "10", "Pratique"],
-        ["Page 6", *HEADER, "11", "Bof", "12", "Super"],
-    ]  # the answer sits at a page edge on 2 pages of 6: below the "half of pages" threshold
-    texts = load_verbatims(pdf(*pages), "x.pdf").texts
-    assert texts[0] == "Service utile" and texts[2] == "Service utile"
-
-
 def test_numbered_txt_with_inline_numbers() -> None:
-    txt = "Enquete 2026, 3 questions\n1. Le reseau coupe\n2) Agence top\n3 - Frais eleves\n"
-    assert load_verbatims(txt.encode(), "r.txt").texts == [
+    lines = ["Enquete 2026, 3 questions", "1. Le reseau coupe", "2) Agence top", "3 - Frais eleves"]
+    assert load_verbatims("\n".join(lines).encode(), "r.txt").texts == [
         "Le reseau coupe",
         "Agence top",
         "Frais eleves",
     ]
 
 
-def test_unnumbered_pdf_falls_back_to_lines() -> None:
-    texts = load_verbatims(pdf(["Le reseau coupe", "Agence top", "Frais eleves"]), "x.pdf").texts
-    assert texts == ["Le reseau coupe", "Agence top", "Frais eleves"]
+def test_numbered_word_paragraphs() -> None:
+    data = docx(["1", "Le réseau coupe", "le soir", "2", "Agence top", "3", "Frais élevés"])
+    assert load_verbatims(data, "export.docx").texts == [
+        "Le réseau coupe le soir",
+        "Agence top",
+        "Frais élevés",
+    ]
+
+
+def test_pdf_is_refused_even_when_renamed() -> None:
+    with pytest.raises(FileError, match=r"\.pdf ne sont pas acceptés"):
+        load_verbatims(b"%PDF-1.4 ...", "enquete.pdf")
+    with pytest.raises(FileError, match="document PDF"):
+        load_verbatims(b"%PDF-1.4 ...", "enquete.csv")

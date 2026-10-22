@@ -1,10 +1,10 @@
 // Client-side look at an uploaded file before sending it: format, size, rows and columns
 // for text formats. The backend (services/file_loader.py) stays the authority: it reads
-// Excel, Word and PDF and checks the real content; this only gives early feedback.
+// Excel and Word and checks the real content; this only gives early feedback.
 
 export const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
-export const ACCEPTED_FORMATS = 'CSV, TSV, TXT, JSON, Excel (.xlsx), Word (.docx) ou PDF';
-export const ACCEPT_ATTRIBUTE = '.csv,.tsv,.txt,.json,.xlsx,.docx,.pdf';
+export const ACCEPTED_FORMATS = 'CSV, TSV, TXT, JSON, Excel (.xlsx) ou Word (.docx)';
+export const ACCEPT_ATTRIBUTE = '.csv,.tsv,.txt,.json,.xlsx,.docx';
 
 const FORMAT_LABELS: Record<string, string> = {
   csv: 'CSV',
@@ -13,13 +13,12 @@ const FORMAT_LABELS: Record<string, string> = {
   json: 'JSON',
   xlsx: 'Excel',
   docx: 'Word',
-  pdf: 'PDF',
 };
 // Same list as BLOCKED_EXTENSIONS in file_loader.py (scripts, programs, markup, macros).
 const BLOCKED = new Set(
   (
     'js mjs cjs ts html htm xhtml svg xml php py rb pl sh bash bat cmd ps1 vbs vbe wsf exe dll ' +
-    'msi com scr jar apk app bin iso zip rar 7z gz tar xlsm xltm docm dotm pptm hta lnk reg'
+    'msi com scr jar apk app bin iso zip rar 7z gz tar xlsm xltm docm dotm pptm hta lnk reg pdf'
   ).split(' '),
 );
 // Same preferred column names as TEXT_COLUMNS in file_loader.py.
@@ -50,7 +49,7 @@ export interface FileInspection {
   filename: string;
   sizeLabel: string;
   formatLabel: string;
-  /** null when the file is only read by the server (Excel, Word, PDF). */
+  /** null when the file is only read by the server (Excel, Word). */
   rows: number | null;
   columns: string[];
   /** The column that will be read, when it can be named before upload. */
@@ -158,7 +157,7 @@ export async function inspectFile(file: File): Promise<FileInspection> {
   if (file.size > MAX_UPLOAD_BYTES) {
     return { ...result, error: 'Fichier trop volumineux (5 Mo maximum).' };
   }
-  if (ext === 'xlsx' || ext === 'docx' || ext === 'pdf') return result;
+  if (ext === 'xlsx' || ext === 'docx') return result;
 
   const text = (await file.text()).replace(BOM, '');
   if (!text.trim()) return { ...result, error: 'Le fichier est vide.' };

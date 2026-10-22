@@ -19,7 +19,7 @@ Une société d'études recueille pour ses clients des centaines de réponses li
 
 ## La solution
 
-On dépose un fichier (CSV, Excel, Word, PDF, TXT ou JSON), on décrit l'enquête en une phrase, et l'outil rend en une à deux minutes : le sentiment de chaque réponse, une grille de 6 à 10 thèmes, des chiffres par thème et une synthèse d'une page prête à relire.
+On dépose un fichier (CSV, Excel, Word, TXT ou JSON), on décrit l'enquête en une phrase, et l'outil rend en une à deux minutes : le sentiment de chaque réponse, une grille de 6 à 10 thèmes, des chiffres par thème et une synthèse d'une page prête à relire.
 
 ```
  Dashboard Angular ──── POST /api/analyses (CSV + contexte) ───▶ API FastAPI
@@ -100,8 +100,8 @@ Variante avec Docker pour le backend : `POSTGRES_PASSWORD=... docker compose up`
 **Fichiers acceptés** (5 Mo et 2 000 réponses maximum) :
 
 - **Tableaux** (CSV, TSV, Excel `.xlsx`, tableau Word, JSON) : la colonne des réponses est détectée automatiquement. Une colonne nommée `verbatim`, `réponse`, `avis` ou `commentaire` est prise en priorité, sinon la colonne qui contient le plus de texte libre.
-- **Textes** (TXT, Word `.docx`, PDF) : une réponse par ligne ou par paragraphe.
-- **Refusés** : programmes, scripts (`.js`, `.html`…), documents à macros, PDF protégés, archives. Le format est vérifié sur le contenu du fichier, pas seulement sur son extension.
+- **Textes** (TXT, Word `.docx`) : une réponse par ligne ou par paragraphe, ou une liste numérotée (1, 2, 3…).
+- **Refusés** : PDF, programmes, scripts (`.js`, `.html`…), documents à macros, archives. Le format est vérifié sur le contenu du fichier, pas seulement sur son extension.
 
 **Tests** : `cd backend && uv run pytest` (aucun appel réel à l'API, le modèle est simulé) et `cd frontend && npm run lint && npm run build`.
 
@@ -121,4 +121,4 @@ Variante avec Docker pour le backend : `POSTGRES_PASSWORD=... docker compose up`
 - **Langues** : le jeu de démo est en français mêlé de wolof. D'autres langues ou des enquêtes très longues restent à tester.
 - **Évaluation** : les étiquettes de référence ont été produites par le même type de modèle que l'outil. Une vraie validation demande une comparaison avec un codeur humain sur une enquête réelle.
 - **Prévu en V1.1** : analyse à partir du lien d'une page publique (blog, forum, page d'avis d'une marque, en respectant les règles du site) et comparaison de plusieurs boutiques ou sources sur une grille de thèmes commune.
-- **Fonctions absentes de la V1** : export CSV enrichi, suivi en temps réel sans rafraîchissement périodique, migrations de schéma de base de données, PDF scannés (pas de reconnaissance de caractères).
+- **Fonctions absentes de la V1** : export CSV enrichi, suivi en temps réel sans rafraîchissement périodique, migrations de schéma de base de données, fichiers PDF (exporter les réponses en CSV, Excel ou Word).

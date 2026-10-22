@@ -26,7 +26,7 @@ describe('inspectFile', () => {
     expect((await inspectFile(file('{"avis": ["a", "b", "c"]}', 'r.json'))).rows).toBe(3);
   });
 
-  it('leaves Excel, Word and PDF to the server', async () => {
+  it('leaves Excel and Word to the server', async () => {
     const result = await inspectFile(file('PK...', 'enquete.xlsx'));
     expect(result.error).toBeNull();
     expect(result.rows).toBeNull();
@@ -36,6 +36,7 @@ describe('inspectFile', () => {
   it('refuses scripts and unknown formats', async () => {
     expect((await inspectFile(file('alert(1)', 'x.js'))).error).toContain('.js');
     expect((await inspectFile(file('x', 'x.docm'))).error).toContain('.docm');
+    expect((await inspectFile(file('%PDF-1.4', 'x.pdf'))).error).toContain('.pdf');
     expect((await inspectFile(file('x', 'x.odt'))).error).toContain('Format non accepté');
   });
 });
