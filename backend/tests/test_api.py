@@ -15,7 +15,7 @@ from app.main import create_app
 from app.models import STATUS_PROCESSING, Analysis
 from app.pipeline.llm_client import LlmError
 from app.services.analysis_service import INTERRUPTED_ERROR, content_hash
-from tests.fakes import FakeLlmClient, load_fixture, load_text_fixture
+from tests.fakes import SURVEY_OK, FakeLlmClient, load_fixture, load_text_fixture
 from tests.test_pipeline_mocked import CONTEXT, TEXTS, extraction_payload
 
 
@@ -37,6 +37,7 @@ class FakeFactory:
     def __call__(self, settings: Settings) -> FakeLlmClient:
         client = FakeLlmClient(
             tool_payloads={
+                "record_file_check": [SURVEY_OK],
                 "record_extraction": [extraction_payload],
                 "record_theme_mapping": [self.cluster_payload],
             },
@@ -137,9 +138,9 @@ def test_verbatims_endpoint_filters_and_pages(api: TestClient) -> None:
 
 def test_usage_endpoint(api: TestClient) -> None:
     usage = api.get(f"/api/analyses/{post(api)['id']}/usage").json()
-    assert [s["step"] for s in usage["steps"]] == ["extract", "cluster", "synthesize"]
-    assert usage["total"]["calls"] == 3
-    assert usage["total"]["input_tokens"] == 300
+    assert [s["step"] for s in usage["steps"]] == ["check", "extract", "cluster", "synthesize"]
+    assert usage["total"]["calls"] == 4
+    assert usage["total"]["input_tokens"] == 400
     assert usage["total"]["cost_usd"] is not None
     assert usage["usd_to_xof"] == Settings().usd_to_xof
 
@@ -155,7 +156,7 @@ def test_failed_analysis_keeps_its_error_and_usage(db: Engine) -> None:
         assert detail["status"] == "failed"
         assert detail["current_step"] == "cluster", "the failed step is kept"
         assert "refused" in detail["error"]
-        assert api.get(f"/api/analyses/{analysis_id}/usage").json()["total"]["calls"] == 2
+        assert api.get(f"/api/analyses/{analysis_id}/usage").json()["total"]["calls"] == 3
         # A failed analysis is not reused: a new upload runs again.
         assert post(api)["cached"] is False
 
@@ -185,3 +186,19 @@ def test_startup_fails_analyses_left_running(db: Engine, factory: FakeFactory) -
         stale = api.get("/api/analyses").json()[0]
         assert stale["status"] == "failed"
         assert api.get(f"/api/analyses/{stale['id']}").json()["error"] == INTERRUPTED_ERROR
+
+
+def test_non_survey_file_fails_with_the_model_reason(db: Engine) -> None:
+    factory = FakeFactory()
+    rejected = {"is_survey": False, "reason": "Ce document semble être un contrat de prestation."}
+
+    def factory_with_rejection(settings: Settings) -> FakeLlmClient:
+        client = factory(settings)
+        client._tool_payloads["record_file_check"] = [rejected]
+        return client
+
+    with TestClient(create_app(engine=db, llm_client_factory=factory_with_rejection)) as api:
+        detail = api.get(f"/api/analyses/{post(api)['id']}").json()
+        assert detail["status"] == "failed"
+        assert detail["error"] == rejected["reason"]
+        assert detail["current_step"] == "preprocess"

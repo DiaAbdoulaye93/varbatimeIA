@@ -29,7 +29,7 @@ router = APIRouter(prefix="/api/analyses", tags=["analyses"])
 
 MAX_UPLOAD_BYTES = 5 * 1024 * 1024
 LIST_LIMIT = 100
-STEP_ORDER = ("extract", "cluster", "synthesize")
+STEP_ORDER = ("check", "extract", "cluster", "synthesize")
 
 
 def _get_analysis(session: Session, analysis_id: str) -> Analysis:

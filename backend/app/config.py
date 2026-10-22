@@ -13,7 +13,7 @@ BACKEND_DIR = Path(__file__).resolve().parents[1]
 Effort = Literal["low", "medium", "high", "xhigh", "max"]
 
 # Bump on any change to a file in app/pipeline/prompts/: it is part of the analysis cache key.
-PROMPT_VERSION = "1"
+PROMPT_VERSION = "2"
 
 
 class Settings(BaseSettings):

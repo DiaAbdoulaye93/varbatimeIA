@@ -21,6 +21,7 @@ from app.models import (
     VerbatimTheme,
     utcnow,
 )
+from app.pipeline.check import InputRejected
 from app.pipeline.llm_client import LlmClient, LlmError, LlmUsage
 from app.pipeline.pipeline import run_pipeline
 from app.pipeline.preprocess import normalize
@@ -206,7 +207,8 @@ def run_analysis(
         logger.info("analysis %s done in %d ms", analysis_id, result.duration_ms)
     except Exception as exc:  # a background task has nobody to raise to
         logger.exception("analysis %s failed", analysis_id)
-        message = str(exc) if isinstance(exc, LlmError) else INTERNAL_ERROR
+        # Messages written for the user: model errors and file rejections.
+        message = str(exc) if isinstance(exc, (LlmError, InputRejected)) else INTERNAL_ERROR
         with Session(engine) as session:
             session.add_all(_llm_calls(analysis_id, client.usage if client else []))
             analysis = session.get_one(Analysis, analysis_id)

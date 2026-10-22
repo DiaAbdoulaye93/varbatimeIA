@@ -9,11 +9,12 @@ from app.config import Settings
 from app.pipeline import cluster as cluster_step
 from app.pipeline import extract as extract_step
 from app.pipeline import synthesize as synthesize_step
+from app.pipeline.check import InputRejected, spread_sample
 from app.pipeline.llm_client import LlmError
 from app.pipeline.pipeline import run_pipeline
 from app.pipeline.preprocess import preprocess
 from app.schemas import AnalysisStats, ExtractionItem, ThemeMapping
-from tests.fakes import FakeLlmClient, load_fixture, load_text_fixture
+from tests.fakes import SURVEY_OK, FakeLlmClient, load_fixture, load_text_fixture
 
 CONTEXT = "Enquête de satisfaction, opérateur télécom, Dakar, septembre 2026."
 SETTINGS = Settings()
@@ -213,6 +214,7 @@ def test_synthesis_retries_once_with_a_reminder() -> None:
 def test_run_pipeline_end_to_end() -> None:
     client = FakeLlmClient(
         tool_payloads={
+            "record_file_check": [SURVEY_OK],
             "record_extraction": [extraction_payload],
             "record_theme_mapping": [load_fixture("cluster_mapping.json")],
         },
@@ -238,6 +240,7 @@ def test_run_pipeline_end_to_end() -> None:
         "n_used": 6,
         "n_skipped": 2,
         "n_failed": 0,
+        "n_flagged": 0,
         "sentiment_counts": {"positive": 2, "neutral": 0, "negative": 3, "mixed": 1},
     }
     duplicate = result.verbatims[4]
@@ -245,7 +248,7 @@ def test_run_pipeline_end_to_end() -> None:
     assert duplicate.sentiment == "negative" and duplicate.theme_ids == [1]
     assert result.verbatims[1].sentiment is None
     assert result.synthesis_md.startswith("## Chiffres clés")
-    assert [u.step for u in result.usage] == ["extract", "cluster", "synthesize"]
+    assert [u.step for u in result.usage] == ["check", "extract", "cluster", "synthesize"]
     assert [s for s, _ in steps][-1] == "done"
     assert [p for _, p in steps] == sorted(p for _, p in steps)
 
@@ -253,3 +256,52 @@ def test_run_pipeline_end_to_end() -> None:
 def test_extraction_items_reject_unknown_sentiment() -> None:
     with pytest.raises(ValueError):
         item(1, "angry", ["x"])
+
+
+# --- AI control ---
+
+
+def flagging_payload(user: str) -> dict[str, Any]:
+    """Like extraction_payload, but flags the 1234 answer and the agency answer."""
+    payload = extraction_payload(user)
+    for item in payload["results"]:
+        if item["idx"] == 3:
+            item["flag"] = "manipulation"
+        elif item["idx"] == 8:
+            item["flag"] = "off_topic"
+    return payload
+
+
+def test_flagged_verbatims_are_excluded_from_themes_and_stats() -> None:
+    client = FakeLlmClient(
+        tool_payloads={
+            "record_file_check": [SURVEY_OK],
+            "record_extraction": [flagging_payload],
+            "record_theme_mapping": [load_fixture("cluster_mapping.json")],
+        },
+        texts=[load_text_fixture("synthesis.md")],
+    )
+    result = run_pipeline(client, SETTINGS, TEXTS, CONTEXT)
+
+    assert (result.stats.n_used, result.stats.n_flagged, result.stats.n_failed) == (4, 2, 0)
+    by_idx = {v.idx: v for v in result.verbatims}
+    assert by_idx[3].skipped_reason == "manipulation" and by_idx[3].sentiment is None
+    assert by_idx[8].skipped_reason == "off_topic" and by_idx[8].theme_ids == []
+    cluster_message = next(c["user"] for c in client.calls if c["step"] == "cluster")
+    assert "service client" not in cluster_message
+    assert "accueil en agence" not in cluster_message
+
+
+def test_file_check_rejects_a_non_survey_file_before_extraction() -> None:
+    rejected = {"is_survey": False, "reason": "Ce document semble être un contrat."}
+    client = FakeLlmClient(tool_payloads={"record_file_check": [rejected]})
+    with pytest.raises(InputRejected, match="contrat"):
+        run_pipeline(client, SETTINGS, TEXTS, CONTEXT)
+    assert [c["step"] for c in client.calls] == ["check"]
+
+
+def test_file_check_sample_spreads_over_the_whole_file() -> None:
+    verbatims = preprocess([f"réponse numéro {i}" for i in range(100)])
+    sample = spread_sample(verbatims, 10)
+    assert len(sample) == 10
+    assert sample[0].idx == 1 and sample[-1].idx > 85

@@ -6,6 +6,7 @@ from collections.abc import Callable, Mapping, Sequence
 from dataclasses import asdict
 
 from app.config import PRICING, Settings
+from app.pipeline.check import check_file
 from app.pipeline.cluster import cluster
 from app.pipeline.extract import extract
 from app.pipeline.llm_client import LlmClient
@@ -33,18 +34,33 @@ ProgressCallback = Callable[[str, int, ProgressInfo], None]
 _EXTRACT_START, _EXTRACT_END = 5, 80
 
 
+def split_flagged(
+    extractions: Mapping[int, ExtractionItem],
+) -> tuple[dict[int, ExtractionItem], dict[int, str]]:
+    """Separate usable results from those the AI control flagged (off topic, manipulation)."""
+    kept = {idx: item for idx, item in extractions.items() if item.flag == "none"}
+    flagged = {idx: item.flag for idx, item in extractions.items() if item.flag != "none"}
+    if flagged:
+        logger.warning("AI control flagged %d verbatims: %s", len(flagged), flagged)
+    return kept, flagged
+
+
 def build_stats(
-    preprocessed: Sequence[PreprocessedVerbatim], extractions: Mapping[int, ExtractionItem]
+    preprocessed: Sequence[PreprocessedVerbatim],
+    extractions: Mapping[int, ExtractionItem],
+    flagged: Mapping[int, str] | None = None,
 ) -> AnalysisStats:
     counts = empty_sentiment_counts()
     for item in extractions.values():
         counts[item.sentiment] += 1
     n_skipped = sum(1 for p in preprocessed if p.skipped_reason)
+    n_flagged = len(flagged or {})
     return AnalysisStats(
         n_received=len(preprocessed),
         n_used=len(extractions),
         n_skipped=n_skipped,
-        n_failed=len(preprocessed) - n_skipped - len(extractions),
+        n_failed=len(preprocessed) - n_skipped - len(extractions) - n_flagged,
+        n_flagged=n_flagged,
         sentiment_counts=counts,
     )
 
@@ -53,8 +69,10 @@ def build_verbatim_results(
     preprocessed: Sequence[PreprocessedVerbatim],
     extractions: Mapping[int, ExtractionItem],
     theme_ids: Mapping[int, list[int]],
+    flagged: Mapping[int, str] | None = None,
 ) -> list[VerbatimResult]:
     """One row per CSV line; duplicates inherit the result of their original."""
+    flagged = flagged or {}
     results = []
     for p in preprocessed:
         source_idx = p.idx
@@ -62,7 +80,9 @@ def build_verbatim_results(
             source_idx = int(p.skipped_reason.removeprefix(DUPLICATE_PREFIX))
         item = extractions.get(source_idx)
         skipped_reason = p.skipped_reason
-        if skipped_reason is None and item is None:
+        if skipped_reason is None and p.idx in flagged:
+            skipped_reason = flagged[p.idx]
+        elif skipped_reason is None and item is None:
             skipped_reason = EXTRACTION_FAILED
         results.append(
             VerbatimResult(
@@ -101,6 +121,9 @@ def run_pipeline(
     kept = [p for p in preprocessed if p.skipped_reason is None]
     norm_texts = {p.idx: p.text_norm for p in preprocessed}
     info.n_kept, info.n_skipped = len(kept), len(preprocessed) - len(kept)
+    if kept:
+        # Raises InputRejected before any extraction token is spent.
+        check_file(client, settings, kept, context)
 
     notify("extract", _EXTRACT_START)
     span = _EXTRACT_END - _EXTRACT_START
@@ -109,11 +132,13 @@ def run_pipeline(
         info.batch_done, info.batch_total = done, total
         notify("extract", _EXTRACT_START + span * done // total)
 
-    extractions = extract(client, settings, kept, context, on_progress=on_batch)
+    extractions, flagged = split_flagged(
+        extract(client, settings, kept, context, on_progress=on_batch)
+    )
 
     notify("cluster", 85)
     themes, theme_ids = cluster(client, settings, extractions, norm_texts, context)
-    stats = build_stats(preprocessed, extractions)
+    stats = build_stats(preprocessed, extractions, flagged)
 
     notify("synthesize", 92)
     synthesis_md = (
@@ -127,7 +152,7 @@ def run_pipeline(
         context=context,
         stats=stats,
         themes=themes,
-        verbatims=build_verbatim_results(preprocessed, extractions, theme_ids),
+        verbatims=build_verbatim_results(preprocessed, extractions, theme_ids, flagged),
         synthesis_md=synthesis_md,
         usage=usage,
         duration_ms=round((time.perf_counter() - start) * 1000),

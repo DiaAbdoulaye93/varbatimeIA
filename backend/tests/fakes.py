@@ -12,6 +12,8 @@ from app.pipeline.llm_client import LlmUsage
 from app.schemas import ToolSpec
 
 FIXTURES_DIR = Path(__file__).resolve().parent / "fixtures"
+# Canned answer of the file check (app/pipeline/check.py): the file is a survey.
+SURVEY_OK = {"is_survey": True, "reason": "Avis de clients sur un opérateur télécom."}
 
 # A canned tool input, or a function building it from the user message.
 # A function may raise LlmError to simulate a failed call.
