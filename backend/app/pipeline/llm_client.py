@@ -43,7 +43,26 @@ _NAME_MAPPING_KEYS = frozenset({"properties", "$defs"})
 
 
 class LlmError(RuntimeError):
-    """A Claude call failed for good (API error, refusal, missing or invalid tool call)."""
+    """A Claude call failed for good (API error, refusal, missing or invalid tool call).
+
+    The message is shown to the user (French); technical details go to the logs.
+    """
+
+
+TRUNCATED_MESSAGE = "la réponse du modèle a dépassé la longueur maximale autorisée"
+UNUSABLE_MESSAGE = "le modèle n'a pas renvoyé de résultat exploitable"
+REFUSAL_MESSAGE = "le modèle a refusé de traiter ce contenu"
+CONNECTION_MESSAGE = "impossible de joindre le service Claude (problème de connexion)"
+
+
+def _status_message(status_code: int) -> str:
+    if status_code in (401, 403):
+        return "la clé API Anthropic est invalide ou n'a pas les droits nécessaires"
+    if status_code == 429:
+        return "la limite de débit de l'API Claude est atteinte, réessayez dans quelques minutes"
+    if status_code >= 500:
+        return "le service Claude est momentanément indisponible ou surchargé, réessayez plus tard"
+    return f"le service Claude a renvoyé une erreur (code {status_code})"
 
 
 @dataclass(frozen=True)
@@ -169,6 +188,10 @@ class AnthropicLlmClient:
                 tools=tools,
                 tool_choice=tool_choice,
             )
+            if response.stop_reason == "max_tokens":
+                # The same request would be cut at the same place: do not retry it.
+                logger.error("%s: tool input truncated at max_tokens=%d", step, max_tokens)
+                raise LlmError(TRUNCATED_MESSAGE)
             block = next(
                 (b for b in response.content if b.type == "tool_use" and b.name == tool.name),
                 None,
@@ -181,7 +204,8 @@ class AnthropicLlmClient:
                 except ValidationError as exc:
                     error = f"invalid {tool.name} input ({exc.error_count()} errors): {exc}"
             logger.warning("%s: attempt %d failed: %s", step, attempt, error)
-        raise LlmError(f"{step}: {error}")
+        logger.error("%s: giving up: %s", step, error)
+        raise LlmError(UNUSABLE_MESSAGE)
 
     def call_text(
         self,
@@ -238,15 +262,17 @@ class AnthropicLlmClient:
             else:
                 response = self._client.messages.create(**params)
         except anthropic.APIStatusError as exc:
-            raise LlmError(f"{step}: API error {exc.status_code}: {exc.message}") from exc
+            logger.error("%s: API error %d: %s", step, exc.status_code, exc.message)
+            raise LlmError(_status_message(exc.status_code)) from exc
         except anthropic.APIConnectionError as exc:
-            raise LlmError(f"{step}: connection error: {exc}") from exc
+            logger.error("%s: connection error: %s", step, exc)
+            raise LlmError(CONNECTION_MESSAGE) from exc
         duration_ms = round((time.perf_counter() - start) * 1000)
         self._record(step, response, duration_ms)
         if response.stop_reason == "refusal":
             details = getattr(response, "stop_details", None)
-            category = getattr(details, "category", None)
-            raise LlmError(f"{step}: model refused the request (category={category})")
+            logger.error("%s: refusal (category=%s)", step, getattr(details, "category", None))
+            raise LlmError(REFUSAL_MESSAGE)
         if response.stop_reason == "max_tokens":
             logger.warning("%s: response hit max_tokens=%d", step, max_tokens)
         return response

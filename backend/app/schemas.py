@@ -99,7 +99,9 @@ RECORD_FILE_CHECK = ToolSpec(
 class CanonicalTheme(StrictModel):
     label: str
     description: str
-    raw_labels: list[str] = Field(description="Raw labels copied exactly as received")
+    raw_label_ids: list[int] = Field(
+        description="Numbers of the raw labels, as listed in the input (never their text)"
+    )
 
 
 class ThemeMapping(StrictModel):

@@ -13,7 +13,7 @@ from sqlmodel import Session
 from app.config import Settings
 from app.main import create_app
 from app.models import STATUS_PROCESSING, Analysis
-from app.pipeline.llm_client import LlmError
+from app.pipeline.llm_client import REFUSAL_MESSAGE, LlmError
 from app.services.analysis_service import INTERRUPTED_ERROR, content_hash
 from tests.fakes import SURVEY_OK, FakeLlmClient, load_fixture, load_text_fixture
 from tests.test_pipeline_mocked import CONTEXT, TEXTS, extraction_payload
@@ -147,7 +147,7 @@ def test_usage_endpoint(api: TestClient) -> None:
 
 def test_failed_analysis_keeps_its_error_and_usage(db: Engine) -> None:
     def broken_cluster(user: str) -> dict[str, Any]:
-        raise LlmError("cluster: model refused the request (category=None)")
+        raise LlmError(REFUSAL_MESSAGE)
 
     factory = FakeFactory(cluster_payload=broken_cluster)
     with TestClient(create_app(engine=db, llm_client_factory=factory)) as api:
@@ -155,7 +155,7 @@ def test_failed_analysis_keeps_its_error_and_usage(db: Engine) -> None:
         detail = api.get(f"/api/analyses/{analysis_id}").json()
         assert detail["status"] == "failed"
         assert detail["current_step"] == "cluster", "the failed step is kept"
-        assert "refused" in detail["error"]
+        assert detail["error"] == REFUSAL_MESSAGE
         assert api.get(f"/api/analyses/{analysis_id}/usage").json()["total"]["calls"] == 3
         # A failed analysis is not reused: a new upload runs again.
         assert post(api)["cached"] is False

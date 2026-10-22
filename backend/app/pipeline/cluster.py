@@ -10,7 +10,6 @@ from collections.abc import Mapping
 from dataclasses import dataclass, field
 
 from app.config import Settings
-from app.pipeline.extract import normalize_label
 from app.pipeline.llm_client import LlmClient
 from app.pipeline.prompt_loader import load_prompt
 from app.schemas import (
@@ -24,7 +23,9 @@ from app.schemas import (
 logger = logging.getLogger(__name__)
 
 STEP = "cluster"
-MAX_TOKENS = 4_000
+# The output lists every raw label number: it grows with the number of distinct labels
+# (hundreds on a 2,000-answer file). Only the tokens actually produced are billed.
+MAX_TOKENS = 16_000
 MIN_THEMES, MAX_THEMES = 6, 10
 OTHER_LABEL = "Autres remarques"
 OTHER_DESCRIPTION = "Remarques isolées qui ne se rattachent à aucun autre thème."
@@ -46,10 +47,16 @@ def count_labels(extractions: Mapping[int, ExtractionItem]) -> Counter[str]:
     return Counter(label for item in extractions.values() for label in item.themes)
 
 
+def ordered_labels(counts: Counter[str]) -> list[str]:
+    """Decreasing count, then alphabetical: the 1-based position is the label number."""
+    return [label for label, _ in sorted(counts.items(), key=lambda kv: (-kv[1], kv[0]))]
+
+
 def build_user_message(context: str, counts: Counter[str]) -> str:
-    # Sorted by decreasing count, then alphabetically so the message is deterministic.
-    ordered = sorted(counts.items(), key=lambda kv: (-kv[1], kv[0]))
-    lines = "\n".join(f"{label} ({count})" for label, count in ordered)
+    # Numbered so the model answers with numbers instead of copying every label back.
+    lines = "\n".join(
+        f"{n}. {label} ({counts[label]})" for n, label in enumerate(ordered_labels(counts), 1)
+    )
     return USER_TEMPLATE.format(
         context=context, total=sum(counts.values()), distinct=len(counts), lines=lines
     )
@@ -57,6 +64,7 @@ def build_user_message(context: str, counts: Counter[str]) -> str:
 
 def resolve_mapping(mapping: ThemeMapping, counts: Counter[str]) -> list[_Theme]:
     """Assign every raw label to exactly one theme; unmapped labels go to OTHER_LABEL."""
+    numbered = ordered_labels(counts)
     themes: list[_Theme] = []
     by_label: dict[str, _Theme] = {}
     assigned: set[str] = set()
@@ -67,11 +75,12 @@ def resolve_mapping(mapping: ThemeMapping, counts: Counter[str]) -> list[_Theme]
             theme = _Theme(label=canonical.label.strip(), description=canonical.description)
             by_label[key] = theme
             themes.append(theme)
-        for raw in canonical.raw_labels:
-            label = normalize_label(raw)
-            if label not in counts:
-                logger.warning("model returned unknown raw label %r, ignored", raw)
-            elif label not in assigned:  # first theme wins on duplicates
+        for number in canonical.raw_label_ids:
+            if not 1 <= number <= len(numbered):
+                logger.warning("model returned unknown label number %d, ignored", number)
+                continue
+            label = numbered[number - 1]
+            if label not in assigned:  # first theme wins on duplicates
                 assigned.add(label)
                 theme.raw_labels.append(label)
 

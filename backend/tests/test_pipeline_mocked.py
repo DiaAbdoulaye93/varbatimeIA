@@ -131,7 +131,7 @@ def test_cluster_user_message_lists_labels_by_frequency() -> None:
     extractions, _ = cluster_inputs()
     message = cluster_step.build_user_message(CONTEXT, cluster_step.count_labels(extractions))
     assert "Total : 8 occurrences, 6 libellés distincts." in message
-    assert message.split("\n\n")[1].splitlines()[0] == "couverture réseau (3)"
+    assert message.split("\n\n")[1].splitlines()[0] == "1. couverture réseau (3)"
 
 
 def test_cluster_maps_locally_and_never_trusts_model_counts() -> None:
@@ -145,7 +145,7 @@ def test_cluster_maps_locally_and_never_trusts_model_counts() -> None:
     # "couverture réseau" is claimed twice: the first theme wins.
     assert by_label["Couverture réseau"].raw_labels == ["couverture réseau"]
     assert by_label["Application mobile"].raw_labels == ["application mobile"]
-    # Unknown label "attente au 1234" ignored; case-insensitive match on "Service Client".
+    # Unknown label number 99 ignored.
     assert by_label["Service client"].raw_labels == ["service client"]
     # "accueil en agence" was not mapped by the model.
     assert themes[-1].label == cluster_step.OTHER_LABEL
@@ -162,7 +162,7 @@ def test_cluster_maps_locally_and_never_trusts_model_counts() -> None:
 def test_resolve_mapping_merges_a_model_provided_other_theme() -> None:
     counts = cluster_step.count_labels({1: item(1, "neutral", ["x", "y"])})
     mapping = ThemeMapping.model_validate(
-        {"themes": [{"label": "Autres remarques", "description": "d", "raw_labels": ["x"]}]}
+        {"themes": [{"label": "Autres remarques", "description": "d", "raw_label_ids": [1]}]}
     )
     themes = cluster_step.resolve_mapping(mapping, counts)
     assert [(t.label, t.raw_labels) for t in themes] == [("Autres remarques", ["x", "y"])]

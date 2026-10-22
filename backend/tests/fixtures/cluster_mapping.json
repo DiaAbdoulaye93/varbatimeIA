@@ -3,27 +3,27 @@
     {
       "label": "Couverture réseau",
       "description": "Disponibilité et stabilité du réseau mobile et de l'internet.",
-      "raw_labels": ["couverture réseau"]
+      "raw_label_ids": [1]
     },
     {
       "label": "Service client",
       "description": "Joignabilité et réponses du support téléphonique.",
-      "raw_labels": ["Service Client", "attente au 1234"]
+      "raw_label_ids": [6, 99]
     },
     {
       "label": "Tarification mobile money",
       "description": "Frais et commissions des opérations de mobile money.",
-      "raw_labels": ["frais de retrait"]
+      "raw_label_ids": [5]
     },
     {
       "label": "Application mobile",
       "description": "Fonctionnement et ergonomie de l'application.",
-      "raw_labels": ["application mobile", "couverture réseau"]
+      "raw_label_ids": [3, 1]
     },
     {
       "label": "Appréciation générale",
       "description": "Avis globaux sans objet précis.",
-      "raw_labels": ["appréciation générale"]
+      "raw_label_ids": [4]
     }
   ]
 }

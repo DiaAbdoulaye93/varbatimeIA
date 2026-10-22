@@ -3,6 +3,8 @@
 from types import SimpleNamespace
 from typing import Any
 
+import anthropic
+import httpx2
 import pytest
 
 from app.config import PRICING, Settings
@@ -120,7 +122,7 @@ def test_raises_after_two_invalid_tool_inputs() -> None:
     bad = {"verbatims": [{"text": "x", "expected_sentiment": "angry", "expected_topics": []}]}
     responses = [make_response([tool_block(bad)]), make_response([tool_block(bad)])]
     client, _ = make_client(responses)
-    with pytest.raises(LlmError, match="invalid record_verbatims input"):
+    with pytest.raises(LlmError, match="résultat exploitable"):
         call(client)
 
 
@@ -128,7 +130,7 @@ def test_refusal_raises_without_retry() -> None:
     refusal = make_response([], stop_reason="refusal")
     refusal.stop_details = SimpleNamespace(category="cyber")
     client, messages = make_client([refusal])
-    with pytest.raises(LlmError, match="refused"):
+    with pytest.raises(LlmError, match="refusé"):
         call(client)
     assert len(messages.requests) == 1
 
@@ -165,3 +167,26 @@ def test_call_text_reads_text_blocks_only() -> None:
         effort="low",
     )
     assert text == "## Chiffres clés\n..."
+
+
+def test_truncated_tool_input_is_not_retried() -> None:
+    truncated = make_response([tool_block({"verbatims": []})], stop_reason="max_tokens")
+    client, messages = make_client([truncated, make_response([tool_block(VALID_INPUT)])])
+    with pytest.raises(LlmError, match="longueur maximale"):
+        call(client)
+    assert len(messages.requests) == 1, "the same request would be cut again"
+
+
+def test_api_errors_become_user_messages() -> None:
+    class FailingMessages:
+        def create(self, **params: Any) -> None:
+            request = httpx2.Request("POST", "https://api.anthropic.com/v1/messages")
+            response = httpx2.Response(401, request=request)
+            raise anthropic.AuthenticationError("bad key", response=response, body=None)
+
+    stub = SimpleNamespace(
+        messages=FailingMessages(), beta=SimpleNamespace(messages=FailingMessages())
+    )
+    client = AnthropicLlmClient(Settings(), client=stub)  # type: ignore[arg-type]
+    with pytest.raises(LlmError, match="clé API Anthropic"):
+        call(client)

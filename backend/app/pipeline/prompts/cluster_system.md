@@ -25,11 +25,11 @@ Produire entre 6 et 10 thèmes canoniques qui couvrent l'ensemble des libellés 
 
 # Format d'entrée
 
-Tu reçois le contexte de l'enquête, le nombre total d'occurrences, puis la liste des libellés bruts triée par fréquence décroissante, un par ligne, sous la forme `libellé (occurrences)`.
+Tu reçois le contexte de l'enquête, le nombre total d'occurrences, puis la liste des libellés bruts triée par fréquence décroissante, un par ligne, sous la forme `numéro. libellé (occurrences)`.
 
 # Format de sortie
 
-Via l'outil, une liste de thèmes. Pour chaque thème : `label`, `description`, `raw_labels` (liste des libellés bruts affectés, recopiés **exactement** tels que reçus, caractère pour caractère, sans correction orthographique ni reformulation). L'ordre des thèmes doit aller du plus gros effectif cumulé au plus petit, « Autres remarques » en dernier s'il existe.
+Via l'outil, une liste de thèmes. Pour chaque thème : `label`, `description`, `raw_label_ids` (liste des **numéros** des libellés bruts affectés, tels qu'ils apparaissent en début de ligne ; ne recopie jamais le texte des libellés). L'ordre des thèmes doit aller du plus gros effectif cumulé au plus petit, « Autres remarques » en dernier s'il existe.
 
 # Exemple
 
@@ -38,19 +38,23 @@ Entrée (extrait) :
 Contexte : enquête de satisfaction clients, opérateur télécom et mobile money, Dakar et régions, septembre 2026.
 Total : 312 occurrences, 94 libellés distincts.
 
-service client (31)
-couverture réseau (28)
-frais de retrait (19)
-appréciation générale (18)
-application mobile (14)
-délai d'activation (11)
-accueil en agence (9)
-qualité des appels (8)
-tarif du forfait internet (8)
-panne internet (7)
-commission wave (6)
-attente au 1234 (5)
+1. service client (31)
+2. couverture réseau (28)
+3. frais de retrait (19)
+4. appréciation générale (18)
+5. application mobile (14)
+6. délai d'activation (11)
+7. accueil en agence (9)
+8. qualité des appels (8)
+9. tarif du forfait internet (8)
+10. panne internet (7)
+11. commission wave (6)
+12. attente au 1234 (5)
 ...
+41. agent incompétent (1)
+57. réclamation sans suite (1)
+63. réseau en zone rurale (1)
+88. coût des transferts (1)
 ```
 
 Résultat (extrait) :
@@ -60,17 +64,17 @@ Résultat (extrait) :
     {
       "label": "Service client",
       "description": "Joignabilité, délais de réponse et compétence du support téléphonique, du chat et des réclamations, hors accueil physique en agence.",
-      "raw_labels": ["service client", "attente au 1234", "agent incompétent", "réclamation sans suite"]
+      "raw_label_ids": [1, 12, 41, 57]
     },
     {
       "label": "Couverture réseau",
       "description": "Disponibilité et stabilité du réseau mobile et de l'internet, coupures, zones mal couvertes, qualité des appels.",
-      "raw_labels": ["couverture réseau", "qualité des appels", "panne internet", "réseau en zone rurale"]
+      "raw_label_ids": [2, 8, 10, 63]
     },
     {
       "label": "Tarification mobile money",
       "description": "Frais, commissions et coûts perçus des opérations de transfert, retrait et paiement via le service de mobile money.",
-      "raw_labels": ["frais de retrait", "commission wave", "coût des transferts"]
+      "raw_label_ids": [3, 11, 88]
     }
   ]
 }
@@ -78,8 +82,8 @@ Résultat (extrait) :
 
 # Vérification avant de répondre
 
-- Tous les libellés bruts reçus sont présents dans exactement un `raw_labels`.
+- Tous les numéros reçus sont présents dans exactement un `raw_label_ids`.
 - Entre 6 et 10 thèmes.
 - « Autres remarques » < 10 % des occurrences, ou absent.
-- Les `raw_labels` sont recopiés à l'identique.
+- Seuls des numéros figurant dans la liste reçue sont utilisés.
 - Jamais de texte hors de l'outil `record_theme_mapping`.
