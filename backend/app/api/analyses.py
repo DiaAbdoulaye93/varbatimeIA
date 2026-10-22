@@ -1,4 +1,4 @@
-"""Routes /api/analyses (IMPLEMENTATION.md §4)."""
+"""Routes /api/analyses (README, API)."""
 
 from collections import defaultdict
 from pathlib import Path

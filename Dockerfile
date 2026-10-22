@@ -1,4 +1,4 @@
-# Single production image: the Angular build is served by FastAPI (IMPLEMENTATION.md §1).
+# Single production image: the Angular build is served by FastAPI (README, Architecture).
 
 # --- Stage 1: build the Angular dashboard ---
 FROM node:24-slim AS frontend

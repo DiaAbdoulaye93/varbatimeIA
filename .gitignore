@@ -29,11 +29,18 @@ dist/
 .angular/
 backend/static/
 
-# Claude Code local overrides
-.claude/settings.local.json
-
 # OS / editors
 .DS_Store
 Thumbs.db
 .idea/
 .vscode/
+
+# Working notes and tooling used to build the project (kept locally, not published)
+IMPLEMENTATION.md
+CLAUDE.md
+.claude/
+.mcp.json
+design/
+data/DATASET.md
+frontend/README.md
+*.zip

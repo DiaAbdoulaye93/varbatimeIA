@@ -1,4 +1,4 @@
-"""Step 3 - executive synthesis in Markdown (IMPLEMENTATION.md §2.4).
+"""Step 3 - executive synthesis in Markdown.
 
 The model only sees aggregated figures and a few truncated excerpts per theme.
 """

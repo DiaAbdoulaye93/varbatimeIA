@@ -37,7 +37,7 @@ INTERNAL_ERROR = "Erreur interne pendant l'analyse."
 
 
 def content_hash(texts: Sequence[str], context: str) -> str:
-    """Cache key: normalized verbatims + context + prompt version (IMPLEMENTATION.md §2.6)."""
+    """Cache key: normalized verbatims + context + prompt version."""
     payload = json.dumps(
         {
             "texts": [normalize(t) for t in texts],

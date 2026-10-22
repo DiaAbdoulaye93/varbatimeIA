@@ -1,4 +1,4 @@
-"""Step 2 - group raw theme labels into canonical themes (IMPLEMENTATION.md §2.3).
+"""Step 2 - group raw theme labels into canonical themes.
 
 One LLM call on the unique raw labels with their frequency; counts, sentiment breakdowns and
 representative verbatims are then computed locally, never taken from the model.

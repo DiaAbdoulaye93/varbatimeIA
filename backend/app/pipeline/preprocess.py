@@ -1,4 +1,4 @@
-"""Step 0 - local preprocessing, zero token (IMPLEMENTATION.md §2.1).
+"""Step 0 - local preprocessing, zero token.
 
 Normalizes whitespace, flags empty or non-informative answers, flags exact duplicates
 (after normalization) and truncates long texts. Skipped verbatims are never sent to Claude.

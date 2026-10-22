@@ -1,4 +1,4 @@
-"""Step 1 - batch extraction of sentiment and raw themes (IMPLEMENTATION.md §2.2)."""
+"""Step 1 - batch extraction of sentiment and raw themes."""
 
 import logging
 from collections.abc import Callable, Sequence

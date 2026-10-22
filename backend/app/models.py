@@ -1,4 +1,4 @@
-"""Database tables (IMPLEMENTATION.md §3)."""
+"""Database tables (README, Modèle de données)."""
 
 from datetime import UTC, datetime
 from typing import Any

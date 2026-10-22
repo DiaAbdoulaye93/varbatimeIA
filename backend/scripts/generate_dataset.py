@@ -1,4 +1,4 @@
-"""Generate the demo dataset in data/samples/ with Claude. Run once; see data/DATASET.md.
+"""Generate the demo dataset in data/samples/ with Claude. Run once (README, section 9).
 
 Usage (from backend/): uv run python scripts/generate_dataset.py [--force] [--out-dir DIR]
 """
@@ -215,7 +215,7 @@ def build_log(client: LlmClient, settings: Settings, rows: list[Row]) -> dict[st
 
 
 def summarize(rows: list[Row]) -> None:
-    """Log the control report described in data/DATASET.md §4."""
+    """Log the control report: sentiments, topics, noise, lengths, share of Wolof."""
     clean = [r for r in rows if not r.noise]
     sentiments = Counter(r.expected_sentiment for r in clean)
     topics = Counter(t for r in clean for t in r.expected_topics)

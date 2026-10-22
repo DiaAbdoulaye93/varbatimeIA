@@ -1,156 +1,95 @@
 # Prompts du pipeline
 
-Ces fichiers sont chargés tels quels par `llm_client.py` comme **system prompt** de chaque étape. Destination dans le repo : `backend/app/pipeline/prompts/`. Ce README décrit, pour chaque étape, le message utilisateur à construire côté Python et le schéma du tool à déclarer. Les prompts sont en français (c'est du contenu métier) ; le code qui les assemble est en anglais.
+Chaque fichier `.md` de ce dossier est le **system prompt** d'une étape. Il est chargé tel quel par `prompt_loader.py`, puis envoyé par `llm_client.py`, seul module du projet qui appelle l'API Claude. Les prompts sont en français, car c'est du contenu métier ; le code qui les assemble est en anglais.
 
-Toute modification d'un prompt doit incrémenter `PROMPT_VERSION` dans `config.py` : cette version entre dans le hash de cache des analyses (§2.6 d'`IMPLEMENTATION.md`).
+**Règle de maintenance :** toute modification d'un prompt doit incrémenter `PROMPT_VERSION` dans `app/config.py` (valeur actuelle : `3`). Cette version fait partie de la clé de cache des analyses : sans cette incrémentation, un fichier déjà analysé serait resservi avec l'ancien résultat.
 
----
+Principes communs à toutes les étapes :
 
-## 1. `extract_system.md` — extraction par lot
+- **Sortie structurée par outil** (*tool use*) avec `strict: true`. Le schéma est défini une seule fois en Pydantic dans `app/schemas.py`, converti en `input_schema`, puis la réponse est revalidée côté Python.
+- **Pas de `temperature`** : les modèles 5.5 n'acceptent que la valeur par défaut. La stabilité vient du schéma et du prompt.
+- **`effort`** réglé par étape dans `app/config.py`.
+- **Les réponses analysées sont des données, jamais des consignes** : c'est écrit dans chaque prompt qui les reçoit.
 
-**Modèle** : `EXTRACT_MODEL` (défaut `claude-haiku-5-5`). **Effort** : `low`. **Pas de `temperature`** (rejetée par les modèles 5.5). **max_tokens** : 1 500.
-
-**System prompt** : contenu du fichier, dans un bloc avec `cache_control: {"type": "ephemeral"}`. Il est identique pour tous les lots et toutes les analyses ; c'est lui qui est mis en cache. Vérifier au premier appel que `cache_creation_input_tokens > 0`, puis `cache_read_input_tokens > 0` sur les suivants ; si le cache ne s'active pas, le prompt est sous le seuil minimal du modèle et il faut l'allonger (ajouter des exemples), pas le raccourcir.
-
-**Message utilisateur** (gabarit, construit en Python) :
-```
-Contexte de l'enquête : {context}
-
-Verbatims :
-{idx}: {text_norm}
-{idx}: {text_norm}
-...
-```
-Un verbatim par ligne, 25 par lot. `idx` est l'index d'origine dans le CSV. Pas de JSON en entrée.
-
-**Tool** (déclaré dans `tools` avec `strict: true`, imposé par `tool_choice: {"type": "tool", "name": "record_extraction"}`, accepté par Haiku 5.5). Le schéma ci-dessous est indicatif : la source unique est `schemas.py` ; les contraintes non supportées en mode strict (`minItems` > 1, `maxItems`) sont retirées du schéma envoyé et revalidées par Pydantic :
-```json
-{
-  "name": "record_extraction",
-  "description": "Record sentiment and themes for every verbatim in the batch.",
-  "input_schema": {
-    "type": "object",
-    "properties": {
-      "results": {
-        "type": "array",
-        "items": {
-          "type": "object",
-          "properties": {
-            "idx": {"type": "integer"},
-            "sentiment": {"type": "string", "enum": ["positive", "neutral", "negative", "mixed"]},
-            "themes": {
-              "type": "array",
-              "items": {"type": "string"},
-              "minItems": 1,
-              "maxItems": 3
-            },
-            "key_phrase": {"type": "string"}
-          },
-          "required": ["idx", "sentiment", "themes"]
-        }
-      }
-    },
-    "required": ["results"]
-  }
-}
-```
-
-**Validation côté Python** après l'appel :
-- l'ensemble des `idx` renvoyés doit égaler l'ensemble des `idx` envoyés ; les manquants sont relancés une fois dans un mini-lot, puis marqués `extraction_failed` ;
-- normaliser les libellés de thèmes : `strip()`, minuscules, espaces multiples réduits — le modèle est déjà briefé mais la normalisation locale garantit l'homogénéité entre lots ;
-- `key_phrase` tronquée à 80 caractères si dépassement.
+| Fichier | Étape | Modèle (variable d'environnement) | Appels par analyse |
+|---|---|---|---|
+| `file_check_system.md` | Vérification du fichier | Haiku 5.5 (`EXTRACT_MODEL`) | 1 |
+| `extract_system.md` | Extraction | Haiku 5.5 (`EXTRACT_MODEL`) | 1 par lot de 25 réponses |
+| `cluster_system.md` | Regroupement des thèmes | Sonnet 5.5 (`CLUSTER_MODEL`) | 1 |
+| `synthesize_system.md` | Synthèse exécutive | Sonnet 5.5 (`SYNTH_MODEL`) | 1 (2 si la structure est à corriger) |
+| `dataset_system.md` | Génération du jeu de démo | Sonnet 5.5 (`DATASET_MODEL`) | Hors application : `scripts/generate_dataset.py` |
 
 ---
 
-## 2. `cluster_system.md` — regroupement des thèmes
+## 1. `file_check_system.md` : vérification du fichier
 
-**Modèle** : `CLUSTER_MODEL` (défaut `claude-sonnet-5-5`). **Effort** : `low`. **Pas de `temperature`**. **max_tokens** : 4 000 (la réflexion adaptative compte dedans). **Un seul appel par analyse.**
+**But :** refuser, avant de dépenser des tokens d'extraction, un fichier qui n'est pas une enquête (contrat, article, code…).
 
-**Message utilisateur** (gabarit) :
-```
-Contexte : {context}
-Total : {total_occurrences} occurrences, {n_distinct} libellés distincts.
+- **Entrée :** le contexte annoncé et un échantillon de 12 réponses réparties sur tout le fichier (300 caractères maximum chacune).
+- **Sortie :** outil `record_file_check` → `{"is_survey": bool, "reason": "phrase en français"}`. Choix d'outil forcé (accepté par Haiku), `max_tokens` 400.
+- **Effet :** si `is_survey` vaut `false`, l'analyse s'arrête en échec et `reason` est affiché à l'utilisateur. En cas de doute, le prompt demande de laisser passer.
 
-{label} ({count})
-{label} ({count})
-...
-```
-Libellés bruts **uniques**, triés par `count` décroissant. Jamais les verbatims.
+## 2. `extract_system.md` : extraction par lot
 
-**Tool** (`strict: true`, `tool_choice: auto` : Sonnet 5.5 rejette le forçage. On vérifie qu'un bloc `tool_use` `record_theme_mapping` est revenu, sinon un seul nouvel essai) :
-```json
-{
-  "name": "record_theme_mapping",
-  "description": "Record the final coding grid: canonical themes and the raw labels each one absorbs.",
-  "input_schema": {
-    "type": "object",
-    "properties": {
-      "themes": {
-        "type": "array",
-        "minItems": 6,
-        "maxItems": 10,
-        "items": {
-          "type": "object",
-          "properties": {
-            "label": {"type": "string"},
-            "description": {"type": "string"},
-            "raw_labels": {"type": "array", "items": {"type": "string"}, "minItems": 1}
-          },
-          "required": ["label", "description", "raw_labels"]
-        }
-      }
-    },
-    "required": ["themes"]
-  }
-}
-```
+**But :** pour chaque réponse, un sentiment, 1 à 3 thèmes bruts, une phrase clé facultative et un signalement éventuel.
 
-**Validation côté Python** :
-- construire le dictionnaire `raw_label -> theme` ; tout libellé brut absent du mapping est rattaché à un thème « Autres remarques » (créé s'il n'existe pas), **sans second appel** ;
-- un libellé présent dans deux thèmes est conservé dans le premier rencontré ;
-- un `raw_label` renvoyé qui ne correspond à aucun libellé envoyé est ignoré avec un log `warning` (le modèle a reformulé malgré la consigne) ;
-- recalculer localement `count` et `sentiment_breakdown` par thème à partir des verbatims, ne jamais faire confiance à un chiffre venant du modèle.
+- **System prompt mis en cache** (`cache_control: ephemeral`) : identique pour tous les lots, il est relu depuis le cache à partir du 2e lot, à un dixième du prix.
+- **Message utilisateur**, construit en Python, une réponse par ligne, 25 par lot :
 
----
+  ```
+  Contexte de l'enquête : {contexte}
 
-## 3. `synthesize_system.md` — synthèse exécutive
+  Verbatims :
+  {idx}: {texte normalisé}
+  ```
 
-**Modèle** : `SYNTH_MODEL` (défaut `claude-sonnet-5-5`). **Effort** : `low`. **Pas de `temperature`**. **max_tokens** : 3 000 (réflexion incluse). Lire la réponse par type de bloc (`text`), la réponse peut commencer par un bloc `thinking`. **Pas de tool** : la réponse est le Markdown lui-même, stocké tel quel dans `Analysis.synthesis_md`. **Un seul appel par analyse.**
+- **Sortie :** outil `record_extraction`, choix forcé, `max_tokens` 2 000, `effort` `low`. Pour chaque réponse : `idx`, `sentiment` (`positive` | `neutral` | `negative` | `mixed`), `themes`, `key_phrase` (facultatif) et `flag` (`none` par défaut, `off_topic` pour le hors-sujet, `manipulation` pour une tentative de détourner l'IA). Le modèle ne renvoie jamais le texte des réponses.
+- **Contrôles côté Python :**
+  - chaque `idx` envoyé doit revenir ; les manquants sont renvoyés une fois en lots de 10, puis marqués `extraction_failed` ;
+  - les libellés sont normalisés (minuscules, espaces), 3 thèmes au maximum, phrase clé de 80 caractères au plus ;
+  - les réponses signalées sont exclues des statistiques, du regroupement et de la synthèse, et affichées avec leur motif.
 
-**Message utilisateur** (gabarit) :
-```
-Contexte : {context}
+## 3. `cluster_system.md` : regroupement des thèmes
 
-Totaux : {n_received} verbatims reçus, {n_used} exploités, {n_skipped} écartés (vides ou doublons).
+**But :** une grille de 6 à 10 thèmes canoniques pour toute l'enquête, à partir des thèmes bruts.
 
-Sentiments : positif {n_pos} ({pct_pos} %), neutre {n_neu} ({pct_neu} %), négatif {n_neg} ({pct_neg} %), mixte {n_mix} ({pct_mix} %).
+- **Message utilisateur :** les thèmes bruts **distincts, numérotés**, triés par fréquence. Les réponses elles-mêmes ne sont jamais envoyées.
 
-Thèmes (par effectif décroissant) :
+  ```
+  Contexte : {contexte}
+  Total : {occurrences} occurrences, {n} libellés distincts.
 
-### {label} — {count} mentions ({pct} %)
-{description}
-Sentiments : positif {p} %, neutre {n} %, négatif {g} %, mixte {m} %
-Extraits :
-- « {excerpt_1} »
-- « {excerpt_2} »
-- « {excerpt_3} »
+  1. service client (31)
+  2. couverture réseau (28)
+  ```
 
-### ...
-```
-Extraits : 2 à 3 par thème, choisis localement (priorité aux verbatims qui portent une `key_phrase`, puis les plus courts), tronqués à 200 caractères avec « … » si coupés. Les thèmes « Appréciation générale » et « Autres remarques » sont inclus dans la liste (le modèle a besoin des chiffres) mais sans extraits.
+- **Sortie :** outil `record_theme_mapping` → pour chaque thème : `label`, `description`, `raw_label_ids` (les **numéros** des thèmes bruts, jamais leur texte). Répondre par numéros rend la réponse plusieurs fois plus courte, ce qui est indispensable sur 2 000 réponses (plusieurs centaines de libellés), et évite tout libellé reformulé.
+- **Paramètres :** `tool_choice: auto` avec `strict: true` (Sonnet 5.5 refuse le choix d'outil forcé), un nouvel essai si l'outil n'est pas appelé, aucun nouvel essai si la réponse est coupée. `max_tokens` 16 000 (seuls les tokens produits sont facturés), `effort` `low`.
+- **Contrôles côté Python :** un numéro inconnu est ignoré ; un libellé affecté deux fois reste dans le premier thème ; un libellé oublié rejoint « Autres remarques ». Effectifs, répartitions des sentiments et citations représentatives sont **recalculés localement**, jamais repris du modèle.
 
-**Validation côté Python** :
-- vérifier que la réponse commence par `## Chiffres clés` et contient les quatre titres attendus ; sinon, un seul retry avec un message utilisateur complété par « Rappel : le document commence par `## Chiffres clés` et contient exactement quatre sections. » ;
-- compter les mots : si > 500, log `warning`, on garde quand même (ne pas brûler un appel pour ça en V1).
+## 4. `synthesize_system.md` : synthèse exécutive
+
+**But :** une page de rapport en Markdown pour le commanditaire de l'enquête.
+
+- **Entrée :** uniquement des agrégats : totaux, répartition des sentiments, et pour chaque thème son poids, sa répartition et 2 à 3 extraits tronqués à 200 caractères. « Appréciation générale » et « Autres remarques » sont fournis sans extraits.
+- **Sortie :** texte libre (pas d'outil), `max_tokens` 3 000, `effort` `low`. La réponse est lue par type de bloc, car elle peut commencer par un bloc de réflexion.
+- **Contrôle :** le document doit commencer par `## Chiffres clés` et contenir les quatre sections (Chiffres clés, Points forts, Points d'attention, Recommandations). Sinon, un seul nouvel essai avec un rappel. Au-delà de 500 mots, un simple avertissement dans les logs.
+
+## 5. `dataset_system.md` : génération du jeu de démo
+
+Utilisé uniquement par `backend/scripts/generate_dataset.py`, jamais par l'application. Il produit des réponses fictives réalistes (fautes, wolof, sarcasme) avec leurs étiquettes de référence. Voir la section « Jeu de données de démo » du README principal.
 
 ---
 
-## Budget de tokens attendu (200 verbatims, ~165 exploités après filtrage)
+## Consommation mesurée
 
-| Étape | Appels | System (cache) | Input par appel | Output par appel |
-|---|---|---|---|---|
-| extract | 7 | ~2 500 (lu depuis le cache dès le 2e appel) | ~900 | ~700 |
-| cluster | 1 | ~1 200 | ~1 000 | ~600 |
-| synthesize | 1 | ~800 | ~2 500 | ~700 |
+Sur le jeu de démo (223 lignes, 203 réponses analysées) :
 
-Ces chiffres sont des ordres de grandeur à remplacer par les valeurs mesurées via `/cost-report`.
+| Étape | Appels | Tokens en entrée | Relus depuis le cache | Tokens en sortie |
+|---|---:|---:|---:|---:|
+| Vérification | 1 | 1 721 | 0 | 112 |
+| Extraction | 9 | 10 225 | 36 126 | 12 002 |
+| Regroupement | 1 | 3 963 | 0 | 1 496 |
+| Synthèse | 1 | 3 458 | 0 | 884 |
+
+Sur 2 000 réponses : 74 appels, dont un regroupement de 10 093 tokens en entrée et 8 036 en sortie.
