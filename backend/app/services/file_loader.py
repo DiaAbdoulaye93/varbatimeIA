@@ -8,6 +8,7 @@ a file is ever executed: only its text is extracted. Messages are shown to the u
 import csv
 import io
 import json
+import math
 import re
 import zipfile
 from collections.abc import Sequence
@@ -140,14 +141,103 @@ def _load_text(data: bytes, extension: str) -> LoadedFile:
     if extension == ".json" or (extension not in (".csv", ".tsv", ".txt") and stripped[:1] in "[{"):
         return _load_json(text)
     if extension == ".txt":
-        return LoadedFile(texts=_lines(text), source_format="txt")
+        return LoadedFile(texts=split_responses([text]), source_format="txt")
     if extension in (".csv", ".tsv") or _looks_tabular(text):
         return _load_csv(text, "tsv" if extension == ".tsv" else "csv")
-    return LoadedFile(texts=_lines(text), source_format="txt")
+    return LoadedFile(texts=split_responses([text]), source_format="txt")
 
 
 def _lines(text: str) -> list[str]:
     return [line.strip() for line in text.splitlines() if line.strip()]
+
+
+# --- Free text (TXT, DOCX paragraphs, PDF pages) -> one string per response ---
+
+# A response number at the start of a line: "12", "12.", "12)", "12 -" (+ optional text).
+_NUMBERED = re.compile(r"^\s*(\d{1,6})(?:\s*[.):\-–]\s*|\s+)?(.*)$")
+_PAGE_MARK = re.compile(r"^(page\s*\d+(\s*(/|sur|of)\s*\d+)?|\d+\s*/\s*\d+)$", re.IGNORECASE)
+PAGE_EDGE_LINES = 4  # lines at the top or bottom of a page checked for repeated headers
+MIN_NUMBERED_RECORDS = 3
+MAX_PARAGRAPH_CHARS = 600
+
+
+def _strip_page_furniture(pages: list[list[str]]) -> list[list[str]]:
+    """Drop page numbers and lines repeated at the top or bottom of several pages."""
+    pages = [[line for line in page if not _PAGE_MARK.match(line)] for page in pages]
+    if len(pages) < 2:
+        return pages
+    edges: dict[str, int] = {}
+    for page in pages:
+        for line in {*page[:PAGE_EDGE_LINES], *page[-PAGE_EDGE_LINES:]}:
+            edges[line] = edges.get(line, 0) + 1
+    # Headers repeat on (nearly) every page; a real answer that happens to sit at the edge
+    # of two pages must not be mistaken for one.
+    threshold = max(2, math.ceil(len(pages) / 2))
+    repeated = {line for line, count in edges.items() if count >= threshold}
+
+    def at_edge(index: int, size: int) -> bool:
+        return index < PAGE_EDGE_LINES or index >= size - PAGE_EDGE_LINES
+
+    return [
+        [line for i, line in enumerate(page) if not (at_edge(i, len(page)) and line in repeated)]
+        for page in pages
+    ]
+
+
+def _numbered_records(lines: list[str], bare_only: bool) -> list[str]:
+    """Responses introduced by consecutive numbers (1, 2, 3...); [] if there is no such list.
+
+    The first number must be followed by the next two, so a line such as
+    "300 réponses · export du 22 octobre" is not taken for response 300.
+    """
+    starts: list[tuple[int, int, str]] = []  # (line index, number, text after the number)
+    for i, line in enumerate(lines):
+        match = _NUMBERED.match(line)
+        if match and (not bare_only or not match.group(2)):
+            starts.append((i, int(match.group(1)), match.group(2) or ""))
+    numbers = [n for _, n, _ in starts]
+    first = next(
+        (k for k, (_, n, _) in enumerate(starts) if n + 1 in numbers[k:] and n + 2 in numbers[k:]),
+        None,
+    )
+    if first is None:
+        return []
+    expected = starts[first][1]
+    records: list[list[str]] = []
+    start_lines = {i: (n, rest) for i, n, rest in starts}
+    for i in range(starts[first][0], len(lines)):
+        number, rest = start_lines.get(i, (None, ""))
+        if number == expected:
+            records.append([rest] if rest else [])
+            expected += 1
+        elif records:
+            records[-1].append(lines[i])
+    texts = [" ".join(" ".join(parts).split()) for parts in records]
+    return texts if len(texts) >= MIN_NUMBERED_RECORDS else []
+
+
+def split_responses(page_texts: list[str]) -> list[str]:
+    """Split free text into responses: numbered list, else paragraphs, else lines."""
+    pages = _strip_page_furniture([_lines(text) for text in page_texts])
+    lines = [line for page in pages for line in page]
+
+    # Numbered list: prefer numbers alone on their line (table exports), else "12. text".
+    bare = _numbered_records(lines, bare_only=True)
+    inline = _numbered_records(lines, bare_only=False)
+    numbered = bare if len(bare) >= 0.8 * len(inline) else inline
+    if numbered:
+        return numbered
+
+    # Paragraphs separated by blank lines, when they look like answers rather than pages.
+    paragraphs = [
+        " ".join(block.split())
+        for text in page_texts
+        for block in re.split(r"\n\s*\n", text)
+        if block.strip()
+    ]
+    if len(paragraphs) > len(page_texts) and all(len(p) <= MAX_PARAGRAPH_CHARS for p in paragraphs):
+        return paragraphs
+    return lines
 
 
 def _looks_tabular(text: str) -> bool:
@@ -286,12 +376,13 @@ def _load_docx(data: bytes) -> LoadedFile:
         rows = [[cell.text.strip() for cell in row.cells] for row in table.rows]
         if len(rows) >= 2:
             return _from_table(rows, "docx")
-    texts = [
+    paragraphs = [
         p.text.strip()
         for p in document.paragraphs
         if p.text.strip() and not (p.style is not None and _is_heading(p.style.name or ""))
     ]
-    return LoadedFile(texts=texts, source_format="docx")
+    # Blank-line separated, so each paragraph is a response unless the text is numbered.
+    return LoadedFile(texts=split_responses(["\n\n".join(paragraphs)]), source_format="docx")
 
 
 def _is_heading(style_name: str) -> bool:
@@ -308,12 +399,11 @@ def _load_pdf(data: bytes) -> LoadedFile:
             raise FileError("Ce PDF est protégé par un mot de passe : il n'est pas accepté.")
         if len(reader.pages) > MAX_PDF_PAGES:
             raise FileError(f"PDF trop long : {len(reader.pages)} pages (maximum {MAX_PDF_PAGES}).")
-        text = "\n".join(page.extract_text() or "" for page in reader.pages)
+        page_texts = [page.extract_text() or "" for page in reader.pages]
     except PdfReadError as exc:
         raise FileError("PDF illisible ou corrompu.") from exc
-    # Blank lines separate responses when present; otherwise one response per line.
-    blocks = [" ".join(b.split()) for b in re.split(r"\n\s*\n", text) if b.strip()]
-    texts = blocks if len(blocks) > 1 else _lines(text)
+    # Pages are kept apart so that repeated headers and footers can be recognised.
+    texts = split_responses(page_texts)
     if not texts:
         raise FileError("Aucun texte n'a pu être extrait de ce PDF (document scanné ?).")
     return LoadedFile(texts=texts, source_format="pdf")

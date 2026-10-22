@@ -38,21 +38,27 @@ def docx(paragraphs: list[str], table: list[list[str]] | None = None) -> bytes:
     return buffer.getvalue()
 
 
-def pdf(lines: list[str]) -> bytes:
-    """A minimal one-page PDF with one text line per entry (ASCII only)."""
-    ops = ["BT", "/F1 12 Tf", "14 TL", "72 720 Td"]
-    for line in lines:
-        ops += [f"({line}) Tj", "T*"]
-    ops.append("ET")
-    stream = "\n".join(ops).encode()
+def pdf(lines: list[str], *more_pages: list[str]) -> bytes:
+    """A minimal PDF, one text line per entry (ASCII only); extra args are extra pages."""
+    pages = [lines, *more_pages]
+    # Objects: 1 catalog, 2 page tree, 3 font, then a (page, content stream) pair per page.
+    kids = " ".join(f"{4 + 2 * i} 0 R" for i in range(len(pages)))
     objects = [
         b"<< /Type /Catalog /Pages 2 0 R >>",
-        b"<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
-        b"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] "
-        b"/Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>",
+        b"<< /Type /Pages /Kids [%s] /Count %d >>" % (kids.encode(), len(pages)),
         b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
-        b"<< /Length %d >>\nstream\n" % len(stream) + stream + b"\nendstream",
     ]
+    for i, page_lines in enumerate(pages):
+        ops = ["BT", "/F1 12 Tf", "14 TL", "72 720 Td"]
+        for line in page_lines:
+            ops += [f"({line}) Tj", "T*"]
+        ops.append("ET")
+        stream = "\n".join(ops).encode()
+        objects.append(
+            b"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] "
+            b"/Resources << /Font << /F1 3 0 R >> >> /Contents %d 0 R >>" % (5 + 2 * i)
+        )
+        objects.append(b"<< /Length %d >>\nstream\n" % len(stream) + stream + b"\nendstream")
     out = io.BytesIO()
     out.write(b"%PDF-1.4\n")
     offsets = []
@@ -200,3 +206,51 @@ def test_zip_bomb_is_refused() -> None:
 def test_too_many_rows() -> None:
     with pytest.raises(FileError, match="Trop de réponses"):
         load_verbatims(("verbatim\n" + "x\n" * (MAX_ROWS + 1)).encode(), "big.csv")
+
+
+# --- free text split into responses (PDF exports of a table, numbered lists) ---
+
+HEADER = ["N", "Verbatim (reponse libre)"]
+
+
+def test_pdf_table_export_with_numbers_and_repeated_headers() -> None:
+    data = pdf(
+        ["Page 1", "Enquete de satisfaction", "300 reponses - export du 22 octobre", *HEADER,
+         "1", "Le reseau coupe", "le soir a Pikine", "2", "Agence top"],
+        ["Page 2", *HEADER, "3", "Frais trop eleves", "4", "Appli lente"],
+        ["Page 3", *HEADER, "5", "Pratique pour payer", "dommage."],
+    )  # fmt: skip
+    assert load_verbatims(data, "export.pdf").texts == [
+        "Le reseau coupe le soir a Pikine",
+        "Agence top",
+        "Frais trop eleves",
+        "Appli lente",
+        "Pratique pour payer dommage.",
+    ]
+
+
+def test_answer_repeated_at_two_page_edges_is_kept() -> None:
+    pages = [
+        ["Page 1", *HEADER, "1", "Service utile", "2", "Bien"],
+        ["Page 2", *HEADER, "3", "Service utile", "4", "Nul"],
+        ["Page 3", *HEADER, "5", "Ok merci", "6", "Rapide"],
+        ["Page 4", *HEADER, "7", "Lent", "8", "Correct"],
+        ["Page 5", *HEADER, "9", "Cher", "10", "Pratique"],
+        ["Page 6", *HEADER, "11", "Bof", "12", "Super"],
+    ]  # the answer sits at a page edge on 2 pages of 6: below the "half of pages" threshold
+    texts = load_verbatims(pdf(*pages), "x.pdf").texts
+    assert texts[0] == "Service utile" and texts[2] == "Service utile"
+
+
+def test_numbered_txt_with_inline_numbers() -> None:
+    txt = "Enquete 2026, 3 questions\n1. Le reseau coupe\n2) Agence top\n3 - Frais eleves\n"
+    assert load_verbatims(txt.encode(), "r.txt").texts == [
+        "Le reseau coupe",
+        "Agence top",
+        "Frais eleves",
+    ]
+
+
+def test_unnumbered_pdf_falls_back_to_lines() -> None:
+    texts = load_verbatims(pdf(["Le reseau coupe", "Agence top", "Frais eleves"]), "x.pdf").texts
+    assert texts == ["Le reseau coupe", "Agence top", "Frais eleves"]
