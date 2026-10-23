@@ -5,8 +5,12 @@
   flex: 1 1 300px;
   min-width: 0;
 }
+// One centered column: breadcrumb, title and form share the same 760px width.
+.narrow {
+  max-width: calc(760px + 2 * var(--space-6));
+}
 .form {
-  max-width: 760px;
+  width: 100%;
   padding: var(--space-6);
   display: flex;
   flex-direction: column;
@@ -202,7 +206,30 @@
   padding-top: var(--space-5);
 }
 @media (max-width: 768px) {
+  .narrow {
+    max-width: calc(760px + 2 * var(--space-4));
+  }
   .form {
     padding: 20px;
+    gap: var(--space-5);
+  }
+  .dropzone {
+    padding: var(--space-5) var(--space-4);
+  }
+}
+@media (max-width: 480px) {
+  .form {
+    padding: var(--space-4);
+  }
+  .filebox {
+    padding: var(--space-3) var(--space-4);
+  }
+  // Full-width actions, the main one first.
+  .actions {
+    flex-direction: column-reverse;
+    align-items: stretch;
+    .btn {
+      width: 100%;
+    }
   }
 }
